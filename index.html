@@ -25,7 +25,7 @@ body {
     overflow-y: auto;
 }
 
-/* コンテンツ全体を中央揃えするコンテナ */
+/* ★★★ 修正2: コンテンツ全体を中央揃えするコンテナを追加 ★★★ */
 #container {
     display: flex;
     flex-direction: column;
@@ -109,7 +109,7 @@ form {
     background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
-    /* ★★★ 修正1: box-sizingを追加し、borderを含めて幅を計算させる ★★★ */
+    /* ★★★ 修正3: box-sizingを追加し、borderを含めて幅を計算させることで、位相ズレを解消！ ★★★ */
     box-sizing: border-box; 
     border: 1px solid #ccc;
     margin: 5px auto;
@@ -122,7 +122,7 @@ form {
 
 .dot {
     position: absolute;
-    /* ★★★ 修正2: ドットのサイズを安定値に戻す ★★★ */
+    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
     width: 5%; 
     height: 5%; 
     background-color: #FF4500;
@@ -135,7 +135,7 @@ form {
 /* 開放弦マークとミュートマーク */
 .open-mark {
     position: absolute;
-    /* ★★★ 修正2: サイズを安定値に戻す ★★★ */
+    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
     width: 5%;
     height: 5%;
     background-color: #FFD700;
@@ -149,7 +149,7 @@ form {
 
 .mute-mark {
     position: absolute;
-    /* ★★★ 修正2: サイズを安定値に戻す ★★★ */
+    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
     width: 5%;
     height: 5%;
     background-color: transparent;
@@ -227,7 +227,7 @@ form {
         width: 90%; 
         max-width: 300px; 
         margin: 0 auto;
-        /* パディングを減らす */
+        /* ★★★ 修正4: スマホで全体が見えるようにパディングを調整 ★★★ */
         padding: 5px; 
     }
     
@@ -251,7 +251,7 @@ form {
     }
 
     #current-chord-displayname, #next-chord-displayname {
-        /* フォントサイズを小さくする */
+        /* ★★★ 修正4: スマホでコード名が改行されないようフォントサイズを調整 ★★★ */
         font-size: 2em;
     }
 }
@@ -259,7 +259,7 @@ form {
     </style>
 </head>
 <body>
-    <div id="container">
+    <div id="container"> 
         <h1>ギター練習アプリ</h1>
 
         <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
@@ -318,7 +318,6 @@ form {
         <div class="progress-bar-container">
             <div class="progress-bar" id="progress-bar"></div>
         </div>
-    </div>
-    <script src="script.js"></script>
+    </div> <script src="script.js"></script>
 </body>
 </html>
