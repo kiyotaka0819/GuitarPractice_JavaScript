@@ -86,28 +86,29 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* PCサイズ時の最大幅を設定 (240px) */
+    width: 240px; 
 }
 
-/* ★★★ 修正箇所: アスペクト比固定とピクセル値削除 ★★★ */
+/* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (ズレ対策) ★★★ */
 #fretboard-container, #next-fretboard-container {
     position: relative;
-    /* width/heightの固定値を削除 */
-    /* width: 240px; height: 220px; */ 
+    /* ズレの原因だった固定ピクセル値を削除！ */
+    /* width: 240px; */ 
+    /* height: 220px; */
     
-    /* アスペクト比固定: 高さ220/幅240 * 100% = 91.66% */
+    /* アスペクト比固定: 220px (高さ) / 240px (幅) * 100% ≈ 91.66% */
     padding-top: 91.66%; 
-    width: 100%; /* 親要素の幅を使う */
-    height: 0; /* padding-topで高さを制御 */
+    width: 100%; 
+    height: 0; 
     
     background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
     border: 1px solid #ccc;
     margin: 5px auto;
-    /* background-image: url("fretboard.jpg"); はJS側で設定するが、ここにあっても問題ない */
 }
 
-/* .string の定義は今回は不要だが、元のコードに残しとるならそのままにしてくれや */
 .string {
     position: absolute;
     height: 100%;
@@ -115,7 +116,7 @@ form {
 
 .dot {
     position: absolute;
-    /* ★★★ 修正箇所: ドットのサイズを相対値 6% に更新 ★★★ */
+    /* サイズを相対値 6% に更新 */
     width: 6%; 
     height: 6%; 
     background-color: #FF4500;
@@ -125,25 +126,22 @@ form {
     z-index: 2;
 }
 
-/* 開放弦マークとミュートマークも同様にサイズを相対化するで！ */
-
+/* 開放弦マークとミュートマークも同様にサイズを相対化 */
 .open-mark {
     position: absolute;
-    /* ★★★ 修正箇所: サイズを相対値 6% に更新 ★★★ */
     width: 6%;
     height: 6%;
-    background-color: #FFD700; /* 例: 黄色 */
+    background-color: #FFD700;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     border: 2px solid black;
     z-index: 2;
     text-align: center;
-    font-size: 0; /* ●マーク自体は非表示にして背景色のみにする */
+    font-size: 0; 
 }
 
 .mute-mark {
     position: absolute;
-    /* ★★★ 修正箇所: サイズを相対値 6% に更新 ★★★ */
     width: 6%;
     height: 6%;
     background-color: transparent;
@@ -163,7 +161,6 @@ form {
     color: black;
     padding: 2px 4px; 
     z-index: 3;
-    /* JSで位置設定するため、ここでは transform: translate(-50%, -50%); はあっても無くても大丈夫 */
 }
 
 #current-chord-displayname, #next-chord-displayname {
@@ -222,17 +219,12 @@ form {
     }
 
     .fretboard-column {
-        width: 90%;
+        width: 90%; 
         margin: 0 auto;
         padding: 10px;
     }
 
-    #fretboard-container, #next-fretboard-container {
-        /* モバイルで幅100%はそのまま利用 */
-        width: 100%;
-        /* heightの固定値を削除したため、height: 250px; は不要。padding-topが有効になる */
-        /* height: 250px; */
-    }
+    /* フレットボードコンテナ自体はpadding-topでサイズを制御するため、ここで高さの固定は不要 */
 
     .controls {
         flex-direction: column;
@@ -274,7 +266,7 @@ form {
                 <label for="progression-select">コード進行:</label>
                 <select name="progressionName" id="progression-select">
                 </select>
-                                <button type="button" id="start-progression-button">この進行で開始</button>
+                <button type="button" id="start-progression-button">この進行で開始</button>
                 <button type="button" id="random-progression-button">ランダム進行を生成</button>
             </div>
             
