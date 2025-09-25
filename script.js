@@ -15,13 +15,17 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
-// フレットの位置 (縦方向) - 1Fから6Fまでの垂直位置 (ネックからフレットの中心)
-const FRET_POSITIONS = [7.5, 23.5, 38.5, 53.0, 67.0, 80.5]; 
+
+// ★★★ 修正箇所1: FRET_POSITIONS (押弦ドットの縦位置) の安定値 ★★★
+// 1F, 2F, 3F... の中央にドットを配置するためのパーセンテージ。
+// 以前の値: [7.5, 23.5, 38.5, 53.0, 67.0, 80.5] -> これだと上すぎた
+const FRET_POSITIONS = [15, 30, 45, 60, 75, 88]; 
+
 // 弦の位置 (横方向) - E6からE1までの水平位置
 const STRING_POSITIONS = [4.5, 20.5, 36.5, 52.5, 68.5, 84.5]; 
 
 // =========================================================================
-// テスト用ダミーデータ
+// テスト用ダミーデータ (変更なし)
 // =========================================================================
 
 const DUMMY_PROGRESSIONS = {
@@ -81,7 +85,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (ドット座標ロジック修正済み)
+// フレットボード描画 (ドット縦位置修正済み)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -106,33 +110,32 @@ function drawFretboard(containerId, chord) {
     }
     
     // ドット、開放弦、ミュートの描画
-    // chord.dotsは [E6, A, D, G, B, E1] の順で、フレット番号を持つ
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // ★★★ 修正箇所1: ドットの横位置（弦の位置）を設定 ★★★
-        // stringIndex 0:E6, 5:E1 -> STRING_POSITIONSの順番と一致
+        // ドットの横位置（弦の位置）を設定
         dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            dot.style.top = '4.5%'; 
+            // ★★★ 修正箇所2: 開放弦マークは指板の画像の一番上(ネック部分)に配置する ★★★
+            dot.style.top = '0%'; 
             container.appendChild(dot);
             
         } else if (fret === -1) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = 'X';
-            dot.style.top = '4.5%';
+            // ★★★ 修正箇所2: ミュートマークは指板の画像の一番上(ネック部分)に配置する ★★★
+            dot.style.top = '0%';
             container.appendChild(dot);
 
         } else if (fret >= 1 && fret <= 6) { 
             // 押弦 (1Fから6F)
             dot.className = 'dot';
 
-            // ★★★ 修正箇所2: ドットの縦位置（フレットの位置）を設定 ★★★
-            // fret 1-6 -> FRET_POSITIONS[0-5] を使う
+            // ★★★ 修正箇所1を反映: FRET_POSITIONS (フレットの中心) を参照 ★★★
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
             container.appendChild(dot);
         }
