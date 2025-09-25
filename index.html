@@ -25,7 +25,7 @@ body {
     overflow-y: auto;
 }
 
-/* ★★★ 新規追加: コンテンツ全体を中央揃えするコンテナ ★★★ */
+/* コンテンツ全体を中央揃えするコンテナ */
 #container {
     display: flex;
     flex-direction: column;
@@ -210,8 +210,6 @@ form {
         padding: 10px;
     }
     
-    /* モバイル時は#containerが中央揃えを維持する */
-
     .fretboard-wrapper {
         flex-direction: column;
         gap: 20px;
@@ -224,7 +222,8 @@ form {
         width: 90%; 
         max-width: 300px; 
         margin: 0 auto;
-        padding: 10px;
+        /* ★★★ 修正: パディングを減らす ★★★ */
+        padding: 5px; 
     }
     
     .controls {
@@ -247,7 +246,8 @@ form {
     }
 
     #current-chord-displayname, #next-chord-displayname {
-        font-size: 2.5em;
+        /* ★★★ 修正: フォントサイズを小さくする ★★★ */
+        font-size: 2em;
     }
 }
 /* --- CSS（見た目）ここまで --- */
