@@ -5,7 +5,7 @@
 // =====================================================================
 
 
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzu51ECxpRFnlz8d-0MDM1KxqedqtXTpGB2skVbYvsnD6OWjvMs_NwYPk_uc5-DzLbWCg/exec'; 
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
 
 // グローバル変数
 let CHORD_DATA_MAP = {}; 
