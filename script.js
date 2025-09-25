@@ -15,11 +15,13 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
-const FRET_POSITIONS = [7.5, 23.5, 38.5, 53.0, 67.0, 80.5]; // 1Fから6Fまでの垂直位置 (ネックからフレットの中心)
-const STRING_POSITIONS = [4.5, 20.5, 36.5, 52.5, 68.5, 84.5]; // E6からE1までの水平位置
+// フレットの位置 (縦方向) - 1Fから6Fまでの垂直位置 (ネックからフレットの中心)
+const FRET_POSITIONS = [7.5, 23.5, 38.5, 53.0, 67.0, 80.5]; 
+// 弦の位置 (横方向) - E6からE1までの水平位置
+const STRING_POSITIONS = [4.5, 20.5, 36.5, 52.5, 68.5, 84.5]; 
 
 // =========================================================================
-// ★★★ 修正箇所: テスト用ダミーデータ (GAS接続の代わりに直接定義) ★★★
+// テスト用ダミーデータ
 // =========================================================================
 
 const DUMMY_PROGRESSIONS = {
@@ -55,14 +57,11 @@ const DUMMY_PROGRESSIONS = {
 
 
 async function loadProgressions() {
-    // ★★★ 修正: fetch(progressions.json) を削除し、ダミーデータを直接使う ★★★
     try {
         allProgressions = DUMMY_PROGRESSIONS;
         populateProgressionSelect();
-        // データの読み込み成功とみなし、エラー表示を消す
         errorContainer.style.display = 'none';
     } catch (error) {
-        // ダミーデータ読み込みでエラーが出ることは稀だが、念のため
         console.error("Error loading dummy progressions:", error);
         errorContainer.style.display = 'block';
     }
@@ -75,7 +74,6 @@ function populateProgressionSelect() {
         option.textContent = name;
         progressionSelect.appendChild(option);
     }
-    // 初回ロード時に最初のコード進行で開始
     if (Object.keys(allProgressions).length > 0) {
         const firstProgressionName = Object.keys(allProgressions)[0];
         startProgression(firstProgressionName);
@@ -83,22 +81,18 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画
+// フレットボード描画 (ドット座標ロジック修正済み)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // コンテナ内の既存の要素をクリア
     container.innerHTML = '';
-
-    // フレットボードの画像を設定
-    // ファイル名が 'fretboard.jpg' と 'fretboard2.jpg' のどちらかであることを前提とする
+    
     const imageName = (chord.fret > 4) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
-    // FRET_POSITIONSとSTRING_POSITIONSの範囲をチェック
     const isStandardFret = (chord.fret <= 4);
 
     // フレット番号ラベルの描画
@@ -106,18 +100,18 @@ function drawFretboard(containerId, chord) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = chord.fret;
-        // ポジションは画像によって調整が必要
-        fretLabel.style.left = '4%'; // 適当な調整
-        fretLabel.style.bottom = '4%'; // 適当な調整
+        fretLabel.style.left = '4%'; 
+        fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
     }
     
     // ドット、開放弦、ミュートの描画
-    // dot.positionは [弦番号(0-5), フレット番号(0-5)] の配列。0:開放弦 1-5:フレット
+    // chord.dotsは [E6, A, D, G, B, E1] の順で、フレット番号を持つ
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // 弦の位置 (E6:0, A:1, D:2, G:3, B:4, E1:5)
+        // ★★★ 修正箇所1: ドットの横位置（弦の位置）を設定 ★★★
+        // stringIndex 0:E6, 5:E1 -> STRING_POSITIONSの順番と一致
         dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
         if (fret === 0) {
@@ -137,7 +131,8 @@ function drawFretboard(containerId, chord) {
             // 押弦 (1Fから6F)
             dot.className = 'dot';
 
-            // フレットの位置 (FRET_POSITIONSは1Fから6Fまでの位置情報)
+            // ★★★ 修正箇所2: ドットの縦位置（フレットの位置）を設定 ★★★
+            // fret 1-6 -> FRET_POSITIONS[0-5] を使う
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
             container.appendChild(dot);
         }
@@ -145,7 +140,7 @@ function drawFretboard(containerId, chord) {
 }
 
 // =========================================================================
-// ロジック/イベントハンドラ
+// ロジック/イベントハンドラ (変更なし)
 // =========================================================================
 
 function startProgression(progressionName) {
@@ -179,14 +174,12 @@ function updateChordDisplay(progression, index) {
     const currentName = document.getElementById('current-chord-displayname');
     const nextName = document.getElementById('next-chord-displayname');
 
-    // 進捗表示を削除してコード名のみを表示
     currentName.textContent = `${currentChord.name}`; 
     nextName.textContent = `${nextChord.name}`; 
 
     drawFretboard('fretboard-container', currentChord);
     drawFretboard('next-fretboard-container', nextChord);
 
-    // プログレスバーの更新 (進捗表示はここで十分)
     const progressBar = document.getElementById('progress-bar');
     const progressWidth = ((currentChordIndex + 1) / progression.chords.length) * 100;
     progressBar.style.width = `${progressWidth}%`;
@@ -207,7 +200,6 @@ function toggleAutoUpdate() {
         const intervalTime = parseInt(autoUpdateTimeSelect.value);
         autoUpdateInterval = setInterval(nextChord, intervalTime);
         toggleAutoUpdateButton.textContent = '一時停止';
-        // 再生ボタンを押した瞬間にも更新
         nextChord();
     }
     isAutoUpdating = !isAutoUpdating;
@@ -217,7 +209,6 @@ function generateRandomProgression() {
     const allNames = Object.keys(allProgressions);
     if (allNames.length === 0) return;
 
-    // ランダムな4つのコード進行からコードをランダムに選ぶ
     const numSteps = 4;
     const randomChords = [];
 
@@ -230,25 +221,23 @@ function generateRandomProgression() {
 
     const randomProgName = `ランダム (${randomChords.map(c => c.name).join('-')})`;
     
-    // 一時的なランダム進行を生成
     allProgressions[randomProgName] = {
         chords: randomChords
     };
     
-    // セレクトボックスに表示せず、即座に開始
     startProgression(randomProgName);
 }
 
 
 // =========================================================================
-// イベントリスナー設定
+// イベントリスナー設定 (変更なし)
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);
 
 startProgressionButton.addEventListener('click', () => {
     startProgression(progressionSelect.value);
-    if (isAutoUpdating) { // 進行が変わったら自動更新をリセット
+    if (isAutoUpdating) { 
         toggleAutoUpdate();
     }
 });
@@ -271,7 +260,7 @@ prevChordButton.addEventListener('click', () => {
 
 randomProgressionButton.addEventListener('click', () => {
     generateRandomProgression();
-    if (isAutoUpdating) { // 進行が変わったら自動更新をリセット
+    if (isAutoUpdating) { 
         toggleAutoUpdate();
     }
 });
