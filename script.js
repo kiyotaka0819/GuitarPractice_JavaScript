@@ -151,7 +151,7 @@ function drawFretboard(containerId, chord) {
             dot.textContent = '×';
             
             // X軸（left）は、ミュートなので、一番左に固定（5%）。
-            dot.style.left = '7%';
+            dot.style.left = '4%';
             container.appendChild(dot);
 
         } else if (fret >= 1 && fret <= 6) { 
