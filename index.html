@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-        <title>ギター練習アプリ (GitHub Pages版)</title>
-        <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>ギター練習アプリ (GitHub Pages版)</title>
+    <style>
     /* --- CSS（見た目）ここから --- */
-    /* GuitarPractice.jspのCSSをほぼそのまま移植 */
-
-    /* body */
+    
+    /* ★★★ 追加・修正: 全幅とボックス計算の安定化 ★★★ */
+    * {
+        box-sizing: border-box; /* パディングやボーダーを含めて幅を計算 */
+    }
     body {
+        /* bodyの幅を強制的に100%にする */
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden; /* 横スクロールを防ぐ */
+        
         font-family: Arial, sans-serif;
-        margin: 10px;
         background-color: #f4f4f4;
         color: #333;
         text-align: center;
@@ -23,6 +30,8 @@
         box-sizing: border-box;
         overflow-y: auto;
     }
+    /* ★★★ 修正ここまで ★★★ */
+
 
     /* 見出し */
     h1 {
@@ -114,7 +123,7 @@
     }
         
     /* ミュート記号 (X) */
-    .mute{
+    .mute-mark{ /* クラス名を修正（script.jsと一致させる） */
         position: absolute;
         font-weight: 900;
         font-size: 22px;
@@ -125,7 +134,7 @@
     }
         
     /* 開放弦記号 (〇) */
-    .open{
+    .open-mark{ /* クラス名を修正（script.jsと一致させる） */
         position: absolute;
         font-family: 'Noto Sans', sans-serif;
         font-weight: 900;
@@ -137,7 +146,7 @@
     }
 
     /* ローフレット（基準フレット）表示 */
-    .low-fret-display {
+    .fret-label { /* クラス名を修正（script.jsと一致させる） */
         position: absolute;
         font-size: 18px;
         font-weight: bold;
@@ -147,7 +156,7 @@
     }
 
     /* コード名表示 */
-    #currentChordDisplayName, #nextChordDisplayName {
+    #current-chord-displayname, #next-chord-displayname { /* ★★★ 修正: ハイフン追加 ★★★ */
         font-size: 3em;
         font-weight: bold;
         color: #333;
@@ -188,59 +197,64 @@
     }
 
     /* ======================================================= */
-/* レスポンシブ対応 (スマホ向け) */
-/* ======================================================= */
-@media (max-width: 600px) {
-    
-    /* 1. 全体の幅を調整 */
-    body {
-        padding: 10px;
-    }
+    /* レスポンシブ対応 (スマホ向け) */
+    /* ======================================================= */
+    @media (max-width: 600px) {
+        
+        /* 1. 全体の幅を調整 */
+        body {
+            padding: 10px;
+        }
 
-    .container {
-        width: 100%; /* 全体の幅をスマホいっぱいに広げる */
-        padding: 10px;
-    }
+        .container {
+            width: 100%; /* 全体の幅をスマホいっぱいに広げる */
+            padding: 10px;
+        }
 
-    /* 2. フレットボードのサイズ調整 */
-    .fretboard-area {
-        flex-direction: column; /* 縦に並べる */
-        gap: 20px;
-        padding: 0;
-    }
+        /* 2. フレットボードのサイズ調整 */
+        .fretboard-wrapper { /* .fretboard-area -> .fretboard-wrapper に修正 */
+            flex-direction: column; /* 縦に並べる */
+            gap: 20px;
+            padding: 0;
+        }
 
-    .fretboard-card {
-        width: 90%; /* スマホの幅に合わせて大きく表示 */
-        margin: 0 auto;
-        padding: 10px;
-    }
+        .fretboard-column { /* .fretboard-card -> .fretboard-column に修正 */
+            width: 90%; /* スマホの幅に合わせて大きく表示 */
+            margin: 0 auto;
+            padding: 10px;
+        }
 
-    .fretboard-container, .next-fretboard-container {
-        /* フレットボードの表示サイズを調整 */
-        height: 200px; /* 必要に応じて高さ調整 */
-    }
+        #fretboard-container, #next-fretboard-container {
+            /* フレットボードの表示サイズを調整 */
+            width: 100%; /* 幅を親要素に合わせる */
+            height: 250px; /* 高さ調整 */
+        }
 
-    /* 3. ボタンとコントロールの調整 */
-    .controls {
-        flex-direction: column; /* ボタンを縦に並べる */
-    }
+        /* 3. ボタンとコントロールの調整 */
+        .controls {
+            flex-direction: column; /* ボタンを縦に並べる */
+        }
+        
+        .button-container {
+            width: 100%;
+        }
 
-    .navigation-buttons button {
-        width: 100%; /* ボタン幅をいっぱいに */
-        margin-bottom: 10px;
-        padding: 15px; /* ボタンを押しやすくする */
+        #prevChordButton, #nextChordButton, #randomProgressionButton {
+            width: 50%; /* ナビゲーションボタンを横並びにする */
+            margin-bottom: 0px;
+            padding: 12px; 
+        }
+        
+        .progress-bar-container {
+            width: 90%;
+            margin-bottom: 20px;
+        }
+        
+        /* 4. フォントサイズ調整 */
+        #current-chord-displayname, #next-chord-displayname {
+            font-size: 2.5em;
+        }
     }
-    
-    .progress-bar-area {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    
-    /* 4. フォントサイズ調整 (必要に応じて) */
-    .chord-display h2 {
-        font-size: 1.5rem;
-    }
-}
 
     /* --- CSS（見た目）ここまで --- */
     </style>
@@ -248,27 +262,25 @@
 <body>
     <h1>ギター練習アプリ</h1>
 
+    <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
+        データの読み込みに失敗しました。
+    </div>
     <div class="controls">
         <form id="progressionForm">
             <div>
                 <label for="progressionSelect">コード進行:</label>
-                <select name="progressionName" id="progressionSelect">
-                    </select>
-                <button type="submit">この進行で開始</button>
-                <button type="button" id="randomProgressionButton">ランダム進行を生成</button>
-            </div>
+                <select name="progressionName" id="progression-select"> </select>
+                <button type="button" onclick="initializeProgression(progressionSelect.value);">この進行で開始</button> <button type="button" id="random-progression-button">ランダム進行を生成</button> </div>
             
             <div class="auto-update-controls">
                 <label for="autoUpdateTime">自動更新:</label>
-                <select id="autoUpdateTime">
-                    <option value="1000">1秒</option>
+                <select id="auto-update-time"> <option value="1000">1秒</option>
                     <option value="2000">2秒</option>
                     <option value="3000" selected>3秒</option>
                     <option value="4000">4秒</option>
                     <option value="5000">5秒</option>
                 </select>
-                <button id="toggleAutoUpdate" type="button">再生</button>
-            </div>
+                <button id="toggle-auto-update" type="button">再生</button> </div>
         </form>
         
         <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
@@ -277,28 +289,27 @@
     <div class="fretboard-wrapper">
         <div class="fretboard-column">
             <div class="fretboard-label">現在のコード</div>
-            <h2 id="currentChordDisplayName"></h2>
+            <h2 id="current-chord-displayname"></h2> 
             <div id="fretboard-container">
             </div>
-            <div class="button-container">
-                <button id="prevChordButton">前のコード</button>
+            <div class="button-container navigation-buttons">
+                <button id="prev-chord-button">前のコード</button>
             </div>
         </div>
 
         <div class="fretboard-column">
             <div class="fretboard-label">次のコード</div>
-            <h2 id="nextChordDisplayName"></h2>
+            <h2 id="next-chord-displayname"></h2> 
             <div id="next-fretboard-container">
             </div>
-            <div class="button-container">
-                <button id="nextChordButton">次のコード</button>
+            <div class="button-container navigation-buttons">
+                <button id="next-chord-button">次のコード</button>
             </div>
         </div>
     </div>
 
     <div class="progress-bar-container">
-        <div class="progress-bar" id="progressBar"></div>
-    </div>
+        <div class="progress-bar" id="progress-bar"></div> </div>
 
     <script src="script.js"></script>
 </body>
