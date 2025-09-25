@@ -7,17 +7,14 @@
     <style>
     /* --- CSS（見た目）ここから --- */
     
-    /* ★★★ 追加・修正: 全幅とボックス計算の安定化 ★★★ */
     * {
         box-sizing: border-box; /* パディングやボーダーを含めて幅を計算 */
     }
     body {
-        /* bodyの幅を強制的に100%にする */
         width: 100%;
         margin: 0;
         padding: 0;
-        overflow-x: hidden; /* 横スクロールを防ぐ */
-        
+        overflow-x: hidden;
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
         color: #333;
@@ -30,8 +27,6 @@
         box-sizing: border-box;
         overflow-y: auto;
     }
-    /* ★★★ 修正ここまで ★★★ */
-
 
     /* 見出し */
     h1 {
@@ -106,8 +101,19 @@
         height: 220px;
         background-size: contain;
         background-repeat: no-repeat;
-        margin: 5px auto;
+        /* 画像がない場合に備えて薄い背景色を設定 */
+        background-color: #fff; 
         border: 1px solid #ccc;
+        margin: 5px auto;
+        /* 画像が読み込まれない場合のために、ここで画像を強制設定 */
+        background-image: url("fretboard.png"); 
+    }
+    
+    /* 押弦ドットの親要素 */
+    .string {
+        position: absolute;
+        height: 100%;
+        /* 6本の弦の横位置を調整 (drawFretboardDotsでleftを設定するためCSSでは省略) */
     }
 
     /* 押弦ドット */
@@ -120,10 +126,11 @@
         transform: translate(-50%, -50%);
         border: 2px solid black;
         z-index: 2;
+        /* ドットの位置はJSで直接設定する */
     }
         
     /* ミュート記号 (X) */
-    .mute-mark{ /* クラス名を修正（script.jsと一致させる） */
+    .mute-mark{ 
         position: absolute;
         font-weight: 900;
         font-size: 22px;
@@ -134,7 +141,7 @@
     }
         
     /* 開放弦記号 (〇) */
-    .open-mark{ /* クラス名を修正（script.jsと一致させる） */
+    .open-mark{ 
         position: absolute;
         font-family: 'Noto Sans', sans-serif;
         font-weight: 900;
@@ -146,7 +153,7 @@
     }
 
     /* ローフレット（基準フレット）表示 */
-    .fret-label { /* クラス名を修正（script.jsと一致させる） */
+    .fret-label { 
         position: absolute;
         font-size: 18px;
         font-weight: bold;
@@ -156,7 +163,7 @@
     }
 
     /* コード名表示 */
-    #current-chord-displayname, #next-chord-displayname { /* ★★★ 修正: ハイフン追加 ★★★ */
+    #current-chord-displayname, #next-chord-displayname { 
         font-size: 3em;
         font-weight: bold;
         color: #333;
@@ -201,46 +208,42 @@
     /* ======================================================= */
     @media (max-width: 600px) {
         
-        /* 1. 全体の幅を調整 */
         body {
             padding: 10px;
         }
 
         .container {
-            width: 100%; /* 全体の幅をスマホいっぱいに広げる */
+            width: 100%;
             padding: 10px;
         }
 
-        /* 2. フレットボードのサイズ調整 */
-        .fretboard-wrapper { /* .fretboard-area -> .fretboard-wrapper に修正 */
-            flex-direction: column; /* 縦に並べる */
+        .fretboard-wrapper {
+            flex-direction: column; 
             gap: 20px;
             padding: 0;
         }
 
-        .fretboard-column { /* .fretboard-card -> .fretboard-column に修正 */
-            width: 90%; /* スマホの幅に合わせて大きく表示 */
+        .fretboard-column {
+            width: 90%; 
             margin: 0 auto;
             padding: 10px;
         }
 
         #fretboard-container, #next-fretboard-container {
-            /* フレットボードの表示サイズを調整 */
-            width: 100%; /* 幅を親要素に合わせる */
-            height: 250px; /* 高さ調整 */
+            width: 100%;
+            height: 250px; 
         }
 
-        /* 3. ボタンとコントロールの調整 */
         .controls {
-            flex-direction: column; /* ボタンを縦に並べる */
+            flex-direction: column;
         }
         
         .button-container {
             width: 100%;
         }
 
-        #prevChordButton, #nextChordButton, #randomProgressionButton {
-            width: 50%; /* ナビゲーションボタンを横並びにする */
+        #prev-chord-button, #next-chord-button, #random-progression-button {
+            width: 50%; 
             margin-bottom: 0px;
             padding: 12px; 
         }
@@ -250,7 +253,6 @@
             margin-bottom: 20px;
         }
         
-        /* 4. フォントサイズ調整 */
         #current-chord-displayname, #next-chord-displayname {
             font-size: 2.5em;
         }
@@ -265,22 +267,29 @@
     <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
         データの読み込みに失敗しました。
     </div>
+    <h2 id="current-progression-name" style="color: #000;"></h2>
+
     <div class="controls">
         <form id="progressionForm">
             <div>
-                <label for="progressionSelect">コード進行:</label>
-                <select name="progressionName" id="progression-select"> </select>
-                <button type="button" onclick="initializeProgression(progressionSelect.value);">この進行で開始</button> <button type="button" id="random-progression-button">ランダム進行を生成</button> </div>
+                <label for="progression-select">コード進行:</label>
+                <select name="progressionName" id="progression-select">
+                </select>
+                <button type="button" onclick="initializeProgression(document.getElementById('progression-select').value);">この進行で開始</button>
+                <button type="button" id="random-progression-button">ランダム進行を生成</button>
+            </div>
             
             <div class="auto-update-controls">
-                <label for="autoUpdateTime">自動更新:</label>
-                <select id="auto-update-time"> <option value="1000">1秒</option>
+                <label for="auto-update-time">自動更新:</label>
+                <select id="auto-update-time">
+                    <option value="1000">1秒</option>
                     <option value="2000">2秒</option>
                     <option value="3000" selected>3秒</option>
                     <option value="4000">4秒</option>
                     <option value="5000">5秒</option>
                 </select>
-                <button id="toggle-auto-update" type="button">再生</button> </div>
+                <button id="toggle-auto-update" type="button">再生</button>
+            </div>
         </form>
         
         <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
@@ -309,7 +318,8 @@
     </div>
 
     <div class="progress-bar-container">
-        <div class="progress-bar" id="progress-bar"></div> </div>
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -1,5 +1,5 @@
 // ★★★ 必須: ここにGASのデプロイURLを貼り付ける！ ★★★
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec';
+const GAS_API_URL = 'GASのURLをここに貼り付けてね';
 
 // コード情報と進行情報（サーバーから取得後に更新される）
 let CHORD_DATA_MAP = {};
@@ -10,13 +10,13 @@ let currentProgressionName = 'C-G-Am-F'; // デフォルト値を設定
 let currentChordIndex = 0;
 let autoUpdateIntervalId = null; // 自動更新のインターバルID
 
-// DOM要素
+// DOM要素の取得（IDはindex.htmlの最終修正版と完全に一致させる）
 const fretboardContainer = document.getElementById('fretboard-container');
 const nextFretboardContainer = document.getElementById('next-fretboard-container');
 const currentChordDisplayNameElement = document.getElementById('current-chord-displayname');
 const nextChordDisplayNameElement = document.getElementById('next-chord-displayname');
 const progressionSelect = document.getElementById('progression-select');
-const currentProgressionNameElement = document.getElementById('current-progression-name');
+const currentProgressionNameElement = document.getElementById('current-progression-name'); // ★★★ 修正：クラッシュの原因はこれの欠落 ★★★
 const progressBar = document.getElementById('progress-bar');
 const prevChordButton = document.getElementById('prev-chord-button');
 const nextChordButton = document.getElementById('next-chord-button');
@@ -41,21 +41,22 @@ async function fetchChordData() {
         const data = await response.json();
         
         if (data.error) {
-            // GAS側でエラーが検出された場合 (例: シートがない)
             throw new Error(`GASエラー: ${data.message || data.error}`);
         }
 
         CHORD_DATA_MAP = data.chords;
         CHORD_PROGRESSIONS_MAP = data.progressions;
 
-        // エラーを非表示
         errorContainer.style.display = 'none';
         
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
-        errorContainer.innerText = 'データの読み込みに失敗しました。GASのURLとデプロイ設定を確認してください。';
-        errorContainer.style.display = 'block';
-        throw error; // 呼び出し元にエラーを伝える
+        // エラーコンテナの存在チェックは不要だが、コードの堅牢性のため
+        if (errorContainer) {
+            errorContainer.innerText = 'データの読み込みに失敗しました。GASのURLとデプロイ設定を確認してください。';
+            errorContainer.style.display = 'block';
+        }
+        throw error;
     }
 }
 
@@ -66,36 +67,35 @@ async function initializeApp() {
     try {
         await fetchChordData();
         
-        // データが存在しない場合はエラーを表示して終了
         const chordCount = Object.keys(CHORD_DATA_MAP).length;
         if (chordCount === 0) {
-            errorContainer.innerText = 'GASからコードデータが取得できませんでした。スプレッドシートを確認してください。';
-            errorContainer.style.display = 'block';
-            return; // 処理を中断
+            if (errorContainer) {
+                errorContainer.innerText = 'GASからコードデータが取得できませんでした。スプレッドシートを確認してください。';
+                errorContainer.style.display = 'block';
+            }
+            return;
         }
 
-        // データが正常なら初期化を続行
         populateProgressionSelect();
         
-        // ★★★ 修正箇所: 強制的にデフォルトの進行を設定するロジック ★★★
         const defaultProgressionName = 'C-G-Am-F';
         let initialProgression = defaultProgressionName;
         
-        // C-G-Am-F が存在しない場合は、代わりに進行リストの最初のものを選択
         if (!CHORD_PROGRESSIONS_MAP[defaultProgressionName]) {
             const firstProgression = Object.keys(CHORD_PROGRESSIONS_MAP)[0];
-            initialProgression = firstProgression || 'Random'; // 進行が一つもなければ'Random'
+            initialProgression = firstProgression || 'Random';
         }
         
-        // プルダウンと内部状態を強制的に設定
-        progressionSelect.value = initialProgression;
+        if (progressionSelect) {
+            progressionSelect.value = initialProgression;
+        }
         currentProgressionName = initialProgression; 
         
         initializeProgression(currentProgressionName);
 
     } catch (error) {
-        // fetchChordDataでエラーが出た場合は、既にエラーメッセージが表示されているはず
         console.warn('初期化中にエラー:', error);
+        // initializeProgressionでクラッシュした場合は、データは読み込まれているがDOMがない可能性がある
     }
 }
 
@@ -103,20 +103,21 @@ async function initializeApp() {
  * プルダウンメニューにコード進行を追加
  */
 function populateProgressionSelect() {
-    progressionSelect.innerHTML = ''; // 一旦クリア
+    if (!progressionSelect) return;
+    
+    progressionSelect.innerHTML = '';
     for (const name in CHORD_PROGRESSIONS_MAP) {
         const option = document.createElement('option');
         option.value = name;
         option.textContent = name;
         progressionSelect.appendChild(option);
     }
-    // 初期値を設定
     progressionSelect.value = currentProgressionName;
 }
 
 
 // ==============================================================================
-// 2. ランダム進行生成ロジック
+// 2. ランダム進行生成ロジックと進行初期化
 // ==============================================================================
 
 /**
@@ -124,17 +125,16 @@ function populateProgressionSelect() {
  */
 function generateRandomProgression() {
     const allChords = Object.keys(CHORD_DATA_MAP);
-    if (allChords.length === 0) return ['C']; // フォールバック
+    if (allChords.length === 0) return ['C'];
     
     const randomProgression = [];
-    const progressionLength = 16; // ランダムは16コードとする
+    const progressionLength = 16; 
 
     for (let i = 0; i < progressionLength; i++) {
         const randomIndex = Math.floor(Math.random() * allChords.length);
         randomProgression.push(allChords[randomIndex]);
     }
     
-    // 生成した進行を一時的にCHORD_PROGRESSIONS_MAPに保存
     CHORD_PROGRESSIONS_MAP['Random'] = randomProgression;
     return randomProgression;
 }
@@ -145,16 +145,12 @@ function generateRandomProgression() {
 function initializeProgression(progressionName) {
     
     if (progressionName === 'Random') {
-        // Randomが選択されたらランダム進行を生成
         generateRandomProgression();
-        // generateRandomProgressionがCHORD_PROGRESSIONS_MAP['Random']を更新するので、
-        // そのまま下の処理に進める
     }
     
     const chords = CHORD_PROGRESSIONS_MAP[progressionName];
     if (!chords || chords.length === 0) {
         console.error(`進行名 ${progressionName} のデータが見つかりません。`);
-        // データがない場合は強制的にRandomを生成して初期化を試みる
         if (progressionName !== 'Random') {
             initializeProgression('Random');
         }
@@ -165,7 +161,9 @@ function initializeProgression(progressionName) {
     currentChordIndex = 0;
     
     // 表示を更新
-    currentProgressionNameElement.innerText = progressionName;
+    if (currentProgressionNameElement) { // ★★★ 修正：DOMが存在するかチェック ★★★
+        currentProgressionNameElement.innerText = progressionName; // L168のエラー箇所
+    }
     updateDisplay();
 }
 
@@ -184,25 +182,27 @@ function updateDisplay() {
     const currentChordName = chords[currentChordIndex];
     const currentChordInfo = CHORD_DATA_MAP[currentChordName];
 
-    // 次のコード情報 (進行の最後までいったら null)
-    const nextChordName = chords[currentChordIndex + 1];
-    const nextChordInfo = nextChordName ? CHORD_DATA_MAP[nextChordName] : null;
+    // ★★★ 修正箇所: 次のコード情報 (循環ロジックをここで適用) ★★★
+    const nextChordIndex = (currentChordIndex + 1) % chords.length; // 進行の最後で0に戻る
+    const nextChordName = chords[nextChordIndex];
+    const nextChordInfo = CHORD_DATA_MAP[nextChordName];
+    // ★★★ 修正ここまで ★★★
 
     // 現在のコードの更新
-    if (currentChordInfo) {
+    if (currentChordInfo && currentChordDisplayNameElement) {
         currentChordDisplayNameElement.innerText = currentChordInfo.displayName;
         drawFretboardDots(currentChordInfo, fretboardContainer);
-    } else {
+    } else if (currentChordDisplayNameElement) {
         currentChordDisplayNameElement.innerText = currentChordName + " (データなし)";
         drawEmptyFretboard(fretboardContainer);
     }
 
     // 次のコードの更新
-    if (nextChordInfo) {
+    if (nextChordInfo && nextChordDisplayNameElement) {
         nextChordDisplayNameElement.innerText = nextChordInfo.displayName;
         drawFretboardDots(nextChordInfo, nextFretboardContainer);
-    } else {
-        nextChordDisplayNameElement.innerText = "コードなし";
+    } else if (nextChordDisplayNameElement) {
+        nextChordDisplayNameElement.innerText = nextChordName + " (データなし)"; // nextChordNameは必ずある
         drawEmptyFretboard(nextFretboardContainer);
     }
 
@@ -214,19 +214,27 @@ function updateDisplay() {
  * 押弦情報を元にフレットボードを描画
  */
 function drawFretboardDots(chordInfo, container) {
+    if (!container) return;
+    
     container.innerHTML = '';
-    container.className = 'fretboard'; // クラスをリセット
-    container.style.backgroundImage = 'url("fretboard.png")'; // 背景画像を設定
+    container.className = 'fretboard';
+    // CSSで背景画像を設定しているため、JSでは一旦コメントアウト
+    // container.style.backgroundImage = 'url("fretboard.png")'; 
     
     const fretPositions = chordInfo.fretPositions;
     const lowFret = chordInfo.lowFret;
     const isBarChord = lowFret > 0;
     
-    // フレット番号の表示
+    // フレット番号の表示 (ハイフレット時)
     if (isBarChord) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.innerText = lowFret;
+        // 左側の縦方向の中央に配置
+        fretLabel.style.position = 'absolute';
+        fretLabel.style.left = '5px';
+        fretLabel.style.top = '50%';
+        fretLabel.style.transform = 'translateY(-50%)';
         container.appendChild(fretLabel);
     }
     
@@ -236,31 +244,49 @@ function drawFretboardDots(chordInfo, container) {
         const stringElement = document.createElement('div');
         stringElement.className = `string string-${i}`;
         
+        // ★★★ 修正箇所: 弦の横位置をJSで直接計算し、ドットを配置する ★★★
+        // 0 (6弦) -> 12%, 1 (5弦) -> 28%, 2 (4弦) -> 44%, 3 (3弦) -> 60%, 4 (2弦) -> 76%, 5 (1弦) -> 92%
+        stringElement.style.position = 'absolute';
+        stringElement.style.left = `${12 + i * 16}%`; // 弦の横位置
+        stringElement.style.width = '1px'; // 弦の幅はほぼゼロ
+        stringElement.style.height = '100%';
+        stringElement.style.top = '0';
+        // ★★★ 修正ここまで ★★★
+        
         if (stringPos === -1) {
             // ミュート(×)
             const mute = document.createElement('div');
             mute.className = 'mute-mark';
             mute.innerText = '×';
+            mute.style.top = '-10px'; // ナットより上に配置
             stringElement.appendChild(mute);
         } else if (stringPos === 0) {
             // 開放弦(○)
             const open = document.createElement('div');
             open.className = 'open-mark';
+            open.innerText = '〇';
+            open.style.top = '-10px'; // ナットより上に配置
             stringElement.appendChild(open);
         } else {
             // 押弦ドット
             const dot = document.createElement('div');
             dot.className = 'dot';
             
-            // ドットの位置を計算 (CSSで定義されたフレット幅に基づいて調整)
             let fretNumber = stringPos;
             if (isBarChord) {
-                fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置
+                fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置 (1～5を想定)
             }
             
-            // Fret 1 (fretNumber=1) は 1フレット目の中央に配置
-            // スタイルはfretboard.cssに依存するため、ここではCSSクラスとデータ属性のみ設定
-            dot.setAttribute('data-fret', fretNumber);
+            // ★★★ 修正箇所: ドットの縦位置を直接設定してバグを防ぐ ★★★
+            // 縦方向の位置の調整 (1フレット目の中央: 10%, 2フレット目の中央: 30%, ...)
+            if (fretNumber >= 1 && fretNumber <= 5) { // 5フレット表示を想定
+                // 1フレット目の中央にドットを配置 (20%間隔で)
+                dot.style.top = `${fretNumber * 20 - 10}%`; 
+            } else {
+                // 5フレットを超える押弦は、フレットボード外に描画されないようにする
+                dot.style.display = 'none'; 
+            }
+            // ★★★ 修正ここまで ★★★
             
             stringElement.appendChild(dot);
         }
@@ -272,9 +298,10 @@ function drawFretboardDots(chordInfo, container) {
  * 空のフレットボードを描画
  */
 function drawEmptyFretboard(container) {
+    if (!container) return;
     container.innerHTML = '';
     container.className = 'fretboard empty';
-    container.style.backgroundImage = 'url("fretboard.png")'; 
+    // container.style.backgroundImage = 'url("fretboard.png")'; // CSSで設定済み 
 }
 
 
@@ -283,7 +310,7 @@ function drawEmptyFretboard(container) {
  */
 function updateProgressBar() {
     const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
-    if (!chords || chords.length === 0) return;
+    if (!chords || chords.length === 0 || !progressBar) return;
     
     const percentage = ((currentChordIndex + 1) / chords.length) * 100;
     progressBar.style.width = percentage + '%';
@@ -295,10 +322,10 @@ function updateProgressBar() {
  */
 function updateButtonStates() {
     const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
-    if (!chords) return;
+    if (!chords || !prevChordButton || !nextChordButton) return;
     
+    // 「次へ」は常に有効（循環するため）
     prevChordButton.disabled = currentChordIndex === 0;
-    // 進行の最後で「次へ」を押したら最初に戻る仕様なので、nextChordButtonは常に有効
     nextChordButton.disabled = false;
 }
 
@@ -327,21 +354,18 @@ function navigateProgression(direction) {
 // 4. 自動更新
 // ==============================================================================
 
-/**
- * 自動更新を開始する
- */
 function startAutoUpdate() {
+    // ... (関数の中身は変更なし)
     const intervalTime = parseInt(autoUpdateTimeSelect.value); // ms
     if (isNaN(intervalTime) || intervalTime <= 0) return;
 
-    // 既に動いている場合は何もしない
     if (autoUpdateIntervalId !== null) return; 
 
-    // 1. ボタンを停止モードに
-    toggleAutoUpdateButton.innerText = '自動更新停止';
-    toggleAutoUpdateButton.classList.add('active');
+    if (toggleAutoUpdateButton) {
+        toggleAutoUpdateButton.innerText = '自動更新停止';
+        toggleAutoUpdateButton.classList.add('active');
+    }
 
-    // 2. インターバルを開始
     autoUpdateIntervalId = setInterval(() => {
         const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
         if (!chords) return stopAutoUpdate(); 
@@ -356,22 +380,18 @@ function startAutoUpdate() {
     }, intervalTime);
 }
 
-/**
- * 自動更新を停止する
- */
 function stopAutoUpdate() {
+    // ... (関数の中身は変更なし)
     if (autoUpdateIntervalId !== null) {
         clearInterval(autoUpdateIntervalId);
         autoUpdateIntervalId = null;
     }
-    // ボタンを再生モードに
-    toggleAutoUpdateButton.innerText = '自動更新開始';
-    toggleAutoUpdateButton.classList.remove('active');
+    if (toggleAutoUpdateButton) {
+        toggleAutoUpdateButton.innerText = '自動更新開始';
+        toggleAutoUpdateButton.classList.remove('active');
+    }
 }
 
-/**
- * 自動更新のトグル
- */
 function toggleAutoUpdate() {
     if (autoUpdateIntervalId !== null) {
         stopAutoUpdate();
@@ -387,46 +407,46 @@ function toggleAutoUpdate() {
 
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-// 「前のコード」ボタン
-prevChordButton.addEventListener('click', function() {
-    stopAutoUpdate();
-    navigateProgression('prev');
-});
-
-// 「次のコード」ボタン
-nextChordButton.addEventListener('click', function() {
-    stopAutoUpdate();
-    navigateProgression('next');
-});
-
-// ランダム進行生成/初期化
-randomProgressionButton.addEventListener('click', function() {
-    // 既存の自動更新を停止
-    stopAutoUpdate();
-    
-    progressionSelect.value = 'Random'; 
-    initializeProgression('Random');
-});
-
-// プルダウン変更時の処理
-progressionSelect.addEventListener('change', function() {
-    const selectedProgression = this.value;
-    
-    // 既存の自動更新を停止
-    stopAutoUpdate();
-    
-    // 新しい進行で初期化
-    initializeProgression(selectedProgression);
-});
-
-
-// 自動更新イベントリスナー
-toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
-
-// プルダウン変更時、自動更新中なら停止後新しい間隔で再開
-autoUpdateTimeSelect.addEventListener('change', function() {
-    if (autoUpdateIntervalId !== null) {
+// イベントリスナーの存在チェック
+if (prevChordButton) {
+    prevChordButton.addEventListener('click', function() {
         stopAutoUpdate();
-        startAutoUpdate(); 
-    }
-});
+        navigateProgression('prev');
+    });
+}
+
+if (nextChordButton) {
+    nextChordButton.addEventListener('click', function() {
+        stopAutoUpdate();
+        navigateProgression('next');
+    });
+}
+
+if (randomProgressionButton) {
+    randomProgressionButton.addEventListener('click', function() {
+        stopAutoUpdate();
+        if (progressionSelect) progressionSelect.value = 'Random'; 
+        initializeProgression('Random');
+    });
+}
+
+if (progressionSelect) {
+    progressionSelect.addEventListener('change', function() {
+        const selectedProgression = this.value;
+        stopAutoUpdate();
+        initializeProgression(selectedProgression);
+    });
+}
+
+if (toggleAutoUpdateButton) {
+    toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
+}
+
+if (autoUpdateTimeSelect) {
+    autoUpdateTimeSelect.addEventListener('change', function() {
+        if (autoUpdateIntervalId !== null) {
+            stopAutoUpdate();
+            startAutoUpdate(); 
+        }
+    });
+}
