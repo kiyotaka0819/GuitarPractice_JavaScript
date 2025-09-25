@@ -14,16 +14,23 @@ let currentChordIndex = 0;
 let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
-// フレットボードの描画パラメータ (変更なし)
-const FRET_POSITIONS = [23, 43, 65, 78, 88, 95]; 
+// フレットボードの描画パラメータ
+// X軸（left）に使うべき定数：フレットの位置 (1F→6F)
+// ★★★ 修正点1: ドットの位相を全体的に微調整 ★★★
+const FRET_POSITIONS = [20, 40, 62, 75, 85, 92]; 
+
+// Y軸（top）に使うべき定数：弦の位置 (E6→E1)
 const Y_AXIS_STRING_POSITIONS = [70.5, 63.5, 56.5, 49, 41, 34.5];
 
+// ★★★ 修正点2: 開放弦/ミュートのX座標を微調整 ★★★
+const OPEN_MUTE_X_POSITION = '3%';
+
 // =========================================================================
-// ★★★ GAS接続とデータ整形ロジック ★★★
+// GAS接続とデータ整形ロジック (変更なし)
 // =========================================================================
 
 // ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
+const GAS_URL = 'あんたのデプロイしたGASのURL'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
@@ -38,7 +45,7 @@ async function fetchDataFromGAS() {
             throw new Error(data.message || data.error);
         }
 
-        return data; // { chords: {...}, progressions: {...} } 形式のデータ
+        return data; 
     } catch (error) {
         console.error("GASからのデータ取得中にエラー:", error);
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
@@ -53,8 +60,6 @@ async function loadProgressions() {
     
     if (data && data.chords && data.progressions) {
         allChords = data.chords;
-        
-        // GASから取得したprogressions (進行名 => [コード名, ...]) をそのまま使用
         allProgressions = data.progressions; 
         
         populateProgressionSelect();
@@ -68,7 +73,6 @@ async function loadProgressions() {
 }
 
 function populateProgressionSelect() {
-    // 既存のオプションをクリア
     progressionSelect.innerHTML = ''; 
     for (const name in allProgressions) {
         const option = document.createElement('option');
@@ -80,7 +84,7 @@ function populateProgressionSelect() {
 
 
 // =========================================================================
-// フレットボード描画 (コードデータをGASの形式に合わせて調整)
+// フレットボード描画 (修正済み)
 // =========================================================================
 
 /**
@@ -96,35 +100,32 @@ function drawFretboard(containerId, chordName) {
     
     const chordData = allChords[chordName];
     if (!chordData) {
-        // データがない場合はエラー表示か空欄
         container.textContent = 'コードデータなし';
         return;
     }
 
     const lowFret = chordData.lowFret;
-    const fretPositions = chordData.fretPositions; // [E6, A, D, G, B, E1]
+    const fretPositions = chordData.fretPositions; 
 
-    // lowFret > 0 なら 'fretboard2.jpg' (高いフレット用)
-    const imageName = (lowFret > 0) ? 'fretboard2.jpg' : 'fretboard.jpg';
+    // ★★★ 修正点3: 画像切り替えロジック (lowFretが2以上でfretboard2.jpgに切り替え) ★★★
+    const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
     // フレット番号ラベルの描画
-    if (lowFret > 0) {
+    if (lowFret >= 2) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
-        // X/Y軸が入れ替わった後の位置で調整
         fretLabel.style.left = '4%'; 
         fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
     }
     
     // ドット、開放弦、ミュートの描画
-    // fretPositions: [E6, A, D, G, B, E1]
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // Y_AXIS_STRING_POSITIONSを直接使用 (E6(index 0)が70.5%で下に来る)
+        // Y軸の位置は変更なし
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         // 描画するフレット位置を計算 (lowFretからの相対位置)
@@ -133,14 +134,16 @@ function drawFretboard(containerId, chordName) {
         if (displayFret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            dot.style.left = '4%'; 
+            // ★★★ 修正点2: X座標に定数を使用 ★★★
+            dot.style.left = OPEN_MUTE_X_POSITION; 
             container.appendChild(dot);
             
         } else if (displayFret === -1) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = '×';
-            dot.style.left = '4%';
+            // ★★★ 修正点2: X座標に定数を使用 ★★★
+            dot.style.left = OPEN_MUTE_X_POSITION;
             container.appendChild(dot);
 
         } else if (displayFret >= 1 && displayFret <= 6) { 
@@ -153,14 +156,13 @@ function drawFretboard(containerId, chordName) {
 }
 
 // =========================================================================
-// ロジック/イベントハンドラ (コードのデータ構造に合わせて修正)
+// ロジック/イベントハンドラ (変更なし)
 // =========================================================================
 
 function startProgression(progressionName) {
     const chordNames = allProgressions[progressionName];
     if (!chordNames || chordNames.length === 0) return;
     
-    // currentProgression はコード名の配列 (例: ['C', 'G', 'Am', ...])
     currentProgression = chordNames;
     currentChordIndex = 0;
     updateChordDisplay(currentProgression, currentChordIndex);
@@ -182,8 +184,6 @@ function prevChord() {
 
 /**
  * 画面表示を更新する
- * @param {string[]} progression - コード名の配列 (例: ['C', 'G', 'Am', ...])
- * @param {number} index - 現在のインデックス
  */
 function updateChordDisplay(progression, index) {
     const currentChordIndex = index;
@@ -193,11 +193,9 @@ function updateChordDisplay(progression, index) {
     const currentNameElement = document.getElementById('current-chord-displayname');
     const nextNameElement = document.getElementById('next-chord-displayname');
 
-    // GASから取得したデータを使う
     currentNameElement.textContent = allChords[currentChordName]?.displayName || currentChordName; 
     nextNameElement.textContent = allChords[nextChordName]?.displayName || nextChordName; 
 
-    // drawFretboard にはコード名 (文字列) を渡す
     drawFretboard('fretboard-container', currentChordName);
     drawFretboard('next-fretboard-container', nextChordName);
 
@@ -219,7 +217,6 @@ function toggleAutoUpdate() {
         toggleAutoUpdateButton.textContent = '再生';
     } else {
         const intervalTime = parseInt(autoUpdateTimeSelect.value);
-        // nextChord() を1回呼んで、すぐに次のコードを表示してからインターバルを開始
         nextChord();
         autoUpdateInterval = setInterval(nextChord, intervalTime);
         toggleAutoUpdateButton.textContent = '一時停止';
@@ -227,7 +224,6 @@ function toggleAutoUpdate() {
     isAutoUpdating = !isAutoUpdating;
 }
 
-// ランダム進行は、GASから取得したコード名のプールを使って作成するように修正
 function generateRandomProgression() {
     const allChordNames = Object.keys(allChords);
     if (allChordNames.length === 0) {
@@ -245,13 +241,9 @@ function generateRandomProgression() {
 
     const randomProgName = `ランダム (${randomChordNames.join('-')})`;
     
-    // 新しいランダム進行を一時的にallProgressionsに追加する
     allProgressions[randomProgName] = randomChordNames;
     
-    // セレクトボックスを更新
     populateProgressionSelect();
-    
-    // 新しい進行を選択
     progressionSelect.value = randomProgName;
 
     startProgression(randomProgName);
@@ -267,7 +259,6 @@ document.addEventListener('DOMContentLoaded', loadProgressions);
 startProgressionButton.addEventListener('click', () => {
     startProgression(progressionSelect.value);
     if (isAutoUpdating) { 
-        // 自動更新中に新しい進行を開始したら、インターバルをリセット
         clearInterval(autoUpdateInterval);
         autoUpdateInterval = null;
         isAutoUpdating = false;
@@ -276,7 +267,6 @@ startProgressionButton.addEventListener('click', () => {
 });
 
 nextChordButton.addEventListener('click', () => {
-    // ボタン操作時は自動更新を停止
     clearInterval(autoUpdateInterval);
     autoUpdateInterval = null;
     isAutoUpdating = false;
@@ -285,7 +275,6 @@ nextChordButton.addEventListener('click', () => {
 });
 
 prevChordButton.addEventListener('click', () => {
-    // ボタン操作時は自動更新を停止
     clearInterval(autoUpdateInterval);
     autoUpdateInterval = null;
     isAutoUpdating = false;
@@ -295,7 +284,6 @@ prevChordButton.addEventListener('click', () => {
 
 randomProgressionButton.addEventListener('click', () => {
     generateRandomProgression();
-    // ランダム生成後は自動更新を停止
     if (isAutoUpdating) { 
         clearInterval(autoUpdateInterval);
         autoUpdateInterval = null;
