@@ -80,22 +80,22 @@ form {
     gap: 30px;
     margin-top: 0px;
     margin-bottom: 5px;
+    /* ★★★ 修正: 全体の最大幅を設定し、PCでウィンドウを縮めても安定させる ★★★ */
+    max-width: 550px; 
 }
 
 .fretboard-column {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* PCサイズ時の最大幅を設定 (240px) */
+    /* ★★★ 修正: PCサイズ時は固定幅240pxに設定し、サイズ変動を抑える ★★★ */
     width: 240px; 
 }
 
 /* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (ズレ対策) ★★★ */
 #fretboard-container, #next-fretboard-container {
     position: relative;
-    /* ズレの原因だった固定ピクセル値を削除！ */
-    /* width: 240px; */ 
-    /* height: 220px; */
+    /* width/heightの固定ピクセル値は引き続き削除 */
     
     /* アスペクト比固定: 220px (高さ) / 240px (幅) * 100% ≈ 91.66% */
     padding-top: 91.66%; 
@@ -216,15 +216,18 @@ form {
         flex-direction: column;
         gap: 20px;
         padding: 0;
+        /* ★★★ 修正: モバイル時は最大幅を解除/調整 ★★★ */
+        max-width: none; 
     }
 
     .fretboard-column {
+        /* モバイル表示時は幅を90%にする */
         width: 90%; 
+        /* ★★★ 追加: 画像の過剰な拡大・縮小を防ぐための最大幅 ★★★ */
+        max-width: 300px; 
         margin: 0 auto;
         padding: 10px;
     }
-
-    /* フレットボードコンテナ自体はpadding-topでサイズを制御するため、ここで高さの固定は不要 */
 
     .controls {
         flex-direction: column;
