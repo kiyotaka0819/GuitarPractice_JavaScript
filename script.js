@@ -30,7 +30,7 @@ const OPEN_MUTE_X_POSITION = '3%';
 // =========================================================================
 
 // ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'あんたのデプロイしたGASのURL'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
