@@ -6,6 +6,7 @@ const randomProgressionButton = document.getElementById('random-progression-butt
 const currentProgressionNameDisplay = document.getElementById('current-progression-name');
 const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
+const errorContainer = document.getElementById('error-container');
 
 let allProgressions = {};
 let currentProgression = null;
@@ -18,20 +19,52 @@ const FRET_POSITIONS = [7.5, 23.5, 38.5, 53.0, 67.0, 80.5]; // 1Fから6Fまで�
 const STRING_POSITIONS = [4.5, 20.5, 36.5, 52.5, 68.5, 84.5]; // E6からE1までの水平位置
 
 // =========================================================================
-// データ読み込み
+// ★★★ 修正箇所: テスト用ダミーデータ (GAS接続の代わりに直接定義) ★★★
 // =========================================================================
 
+const DUMMY_PROGRESSIONS = {
+  "C-G-Am-Em-F-C-F-G (王道進行)": {
+    "chords": [
+      { "name": "C", "fret": 0, "dots": [ -1, 3, 2, 0, 1, 0 ] },
+      { "name": "G", "fret": 0, "dots": [ 3, 2, 0, 0, 0, 3 ] },
+      { "name": "Am", "fret": 0, "dots": [ -1, 0, 2, 2, 1, 0 ] },
+      { "name": "Em", "fret": 0, "dots": [ 0, 2, 2, 0, 0, 0 ] },
+      { "name": "F", "fret": 1, "dots": [ 1, 3, 3, 2, 1, 1 ] },
+      { "name": "C", "fret": 0, "dots": [ -1, 3, 2, 0, 1, 0 ] },
+      { "name": "F", "fret": 1, "dots": [ 1, 3, 3, 2, 1, 1 ] },
+      { "name": "G", "fret": 0, "dots": [ 3, 2, 0, 0, 0, 3 ] }
+    ]
+  },
+  "Am-G-C-F (カノン進行)": {
+    "chords": [
+      { "name": "Am", "fret": 0, "dots": [ -1, 0, 2, 2, 1, 0 ] },
+      { "name": "G", "fret": 0, "dots": [ 3, 2, 0, 0, 0, 3 ] },
+      { "name": "C", "fret": 0, "dots": [ -1, 3, 2, 0, 1, 0 ] },
+      { "name": "F", "fret": 1, "dots": [ 1, 3, 3, 2, 1, 1 ] }
+    ]
+  },
+  "Dm7-G7-Cmaj7-Fmaj7 (ジャズ進行)": {
+    "chords": [
+      { "name": "Dm7", "fret": 5, "dots": [ -1, 5, 7, 5, 6, 5 ] },
+      { "name": "G7", "fret": 3, "dots": [ 3, 5, 3, 4, 3, 3 ] },
+      { "name": "Cmaj7", "fret": 3, "dots": [ -1, 3, 5, 4, 5, 3 ] },
+      { "name": "Fmaj7", "fret": 1, "dots": [ 1, 3, 3, 2, 1, 0 ] }
+    ]
+  }
+};
+
+
 async function loadProgressions() {
+    // ★★★ 修正: fetch(progressions.json) を削除し、ダミーデータを直接使う ★★★
     try {
-        const response = await fetch('progressions.json');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        allProgressions = await response.json();
+        allProgressions = DUMMY_PROGRESSIONS;
         populateProgressionSelect();
+        // データの読み込み成功とみなし、エラー表示を消す
+        errorContainer.style.display = 'none';
     } catch (error) {
-        console.error("Error loading progressions:", error);
-        document.getElementById('error-container').style.display = 'block';
+        // ダミーデータ読み込みでエラーが出ることは稀だが、念のため
+        console.error("Error loading dummy progressions:", error);
+        errorContainer.style.display = 'block';
     }
 }
 
@@ -146,9 +179,8 @@ function updateChordDisplay(progression, index) {
     const currentName = document.getElementById('current-chord-displayname');
     const nextName = document.getElementById('next-chord-displayname');
 
-    // ★★★ 修正箇所: 進捗表示を削除してコード名のみを表示 ★★★
+    // 進捗表示を削除してコード名のみを表示
     currentName.textContent = `${currentChord.name}`; 
-    
     nextName.textContent = `${nextChord.name}`; 
 
     drawFretboard('fretboard-container', currentChord);
