@@ -4,21 +4,23 @@ const GAS_API_URL = '';
 // コード情報と進行情報（静的環境でJS内に保持するダミーデータ）
 let CHORD_DATA_MAP = {
     'C': { displayName: 'C', fretPositions: [0, 3, 2, 0, 1, 0], lowFret: 0 },
-    'C#': { displayName: 'C#', fretPositions: [4, 4, 6, 6, 6, 4], lowFret: 4 },
     'G': { displayName: 'G', fretPositions: [3, 2, 0, 0, 0, 3], lowFret: 0 },
     'Am': { displayName: 'Am', fretPositions: [0, 0, 2, 2, 1, 0], lowFret: 0 },
     'F': { displayName: 'F', fretPositions: [1, 3, 3, 2, 1, 1], lowFret: 1 }, // Fコードはローフレット1の例
     'Bm': { displayName: 'Bm', fretPositions: [2, 2, 4, 4, 3, 2], lowFret: 2 },
-    'F#m': { displayName: 'F#m', fretPositions: [2, 4, 4, 2, 2, 2], lowFret: 2 } // F#mはローフレット2の例
+    'F#m': { displayName: 'F#m', fretPositions: [2, 4, 4, 2, 2, 2], lowFret: 2 },
+    // ★★★ 追加: ローフレット値が3以上のコード (fretboard2.jpgテスト用) ★★★
+    'G#m': { displayName: 'G#m', fretPositions: [4, 6, 6, 4, 4, 4], lowFret: 4 }, // 4フレットから始まるG#m
+    'C#m': { displayName: 'C#m', fretPositions: [-1, 4, 6, 6, 5, 4], lowFret: 4 } // 4フレットから始まるC#m
 };
 let CHORD_PROGRESSIONS_MAP = {
-    'C-G-Am-F-C#': ['C', 'G', 'Am', 'F', 'C#'],
-    'TestHighFret': ['F#m', 'C', 'Bm', 'G'],
+    'C-G-Am-F': ['C', 'G', 'Am', 'F'],
+    'TestHighFret': ['F#m', 'C#m', 'G#m', 'G'], // ★★★ 修正: ハイフレットコードを追加 ★★★
     'Random': ['C', 'G', 'Am', 'F'] 
 };
 
 // 現在の練習状態
-let currentProgressionName = 'C-G-Am-F-C#'; 
+let currentProgressionName = 'C-G-Am-F'; 
 let currentChordIndex = 0;
 let totalProgressionLength = CHORD_PROGRESSIONS_MAP[currentProgressionName].length; 
 let autoUpdateIntervalId = null; 
@@ -37,6 +39,7 @@ const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container'); 
 const startProgressionButton = document.getElementById('start-progression-button');
+const currentProgressionNameElement = document.getElementById('current-progression-name');
 
 // ★★★ 復元された絶対座標定数（正しい位相を決定するピクセル値）★★★
 const stringTops = [75, 92, 109, 126, 143, 158];
@@ -68,7 +71,7 @@ async function initializeApp() {
 
     // DOM要素の存在チェックと初期表示
     if (initialCurrentChordInfo && currentChordDisplayNameElement) {
-        // ★★★ 修正箇所: 初期表示時にも進行状況を結合する ★★★
+        // 進行状況を結合する
         let currentDisplayText = initialCurrentChordInfo.displayName;
         currentDisplayText += " (" + (currentChordIndex + 1) + "/" + totalProgressionLength + ")";
         currentChordDisplayNameElement.innerText = currentDisplayText;
@@ -89,6 +92,12 @@ async function initializeApp() {
     
     updateProgressBar();
     setupEventListeners(); 
+    
+    // 初期化時にも進行名と状況を表示する
+    if (currentProgressionNameElement) {
+        currentProgressionNameElement.innerText = currentProgressionName + " (1 / " + totalProgressionLength + ")";
+    }
+    
     console.log("--- アプリ初期化完了 ---");
 }
 
@@ -132,20 +141,23 @@ function drawFretboardDots(chordInfo, containerElement) {
 
     const lowFretValue = chordInfo.lowFret || 0;
     
-    // 背景画像の設定 (404エラー対策済み)
+    // 背景画像の設定 (fretboard2.jpgの切り替えロジック)
     containerElement.style.backgroundImage = lowFretValue > 2 ? "url('fretboard2.jpg')" : "url('fretboard.jpg')";
     containerElement.style.backgroundSize = 'contain';
 
     // ローフレット値表示
     if (lowFretValue > 2) {
         const lowFretDiv = document.createElement('div');
-        lowFretDiv.className = 'fret-label'; // CSSクラスを修正
+        lowFretDiv.className = 'fret-label'; 
         lowFretDiv.textContent = lowFretValue;
 
-        // 表示位置の調整 (フレットボード画像の右側に寄せる)
+        // ★★★ 修正箇所: 左下（一番低い弦の下）に配置する ★★★
         lowFretDiv.style.position = 'absolute';
-        lowFretDiv.style.top = '10px'; // 上端近く
-        lowFretDiv.style.right = '-25px'; // 右側に少しはみ出す
+        // Y座標: 一番低い弦(6弦)の位置 + 25px 
+        lowFretDiv.style.top = stringTops[stringTops.length - 1] + 25 + 'px'; 
+        // X座標: ナットの位置の少し右
+        lowFretDiv.style.left = fretLefts[0] + 10 + 'px'; 
+        
         containerElement.appendChild(lowFretDiv);
         console.log(`[DRAW] ローフレット表示: ${lowFretValue} @ (${lowFretDiv.style.left}, ${lowFretDiv.style.top})`);
     }
@@ -166,13 +178,13 @@ function drawFretboardDots(chordInfo, containerElement) {
         let logMessage = `[DOT] 弦${6-i} (RawFret: ${fret}, DisplayFret: ${displayFret}, Y-Top: ${stringTops[stringIndex]}px)`;
 
         if (fret === -1) { // ミュート弦
-            element.className = 'mute-mark'; // CSSクラスを修正
+            element.className = 'mute-mark'; 
             element.innerText = '×';
             element.style.left = fretLefts[0] + 'px';
             logMessage += ` -> MUTE (X-Left: ${element.style.left})`;
         } else if (fret === 0) { // 開放弦
-            element.className = 'open-mark'; // CSSクラスを修正
-            element.innerText = '●'; // 〇 の方が良いが、フォント依存するので●に修正
+            element.className = 'open-mark'; 
+            element.innerText = '●'; 
             element.style.left = fretLefts[0] + 'px';
             logMessage += ` -> OPEN (X-Left: ${element.style.left})`;
         } else if (fret > 0) { // 押弦フレット
@@ -184,14 +196,14 @@ function drawFretboardDots(chordInfo, containerElement) {
                 logMessage += ` -> DOT (Fret ${displayFret}, X-Left: ${element.style.left})`;
             } else if (displayFret === 0) {
                  element.style.left = fretLefts[0] + 'px';
-                 logMessage += ` -> DOT-ERROR-FRET0 (X-Left: ${element.style.left})`; // ログで警告
+                 logMessage += ` -> DOT-ERROR-FRET0 (X-Left: ${element.style.left})`; 
             } else {
                 console.warn(`[DOT] 描画スキップ: 弦${6-i}のDisplayFret値が範囲外 (${displayFret})`);
                 return;
             }
         }
         console.log(logMessage);
-        element.style.transform = 'translate(-50%, -50%)'; // CSSのtransformを継承
+        element.style.transform = 'translate(-50%, -50%)'; 
         containerElement.appendChild(element);
     });
 }
@@ -228,7 +240,6 @@ function updateDisplay() {
     console.log(`[UPDATE] 表示更新。現在: ${currentChordName} (${currentChordIndex + 1}/${totalProgressionLength}), 次: ${nextChordName}`);
     
     // コード名と進行状況更新
-    // ★★★ 修正箇所: ここで進行状況も必ず結合する ★★★
     let currentDisplayText = currentChordInfo.displayName;
     currentDisplayText += " (" + (currentChordIndex + 1) + "/" + totalProgressionLength + ")";
     
@@ -244,7 +255,13 @@ function updateDisplay() {
         nextFretboardContainer.innerHTML = '';
         nextFretboardContainer.style.backgroundImage = "none";
     }
+    
     updateProgressBar();
+    
+    // 進行状況と進行名を中央のH2タグに表示
+    if (currentProgressionNameElement) {
+        currentProgressionNameElement.innerText = currentProgressionName + " (" + (currentChordIndex + 1) + " / " + totalProgressionLength + ")";
+    }
 }
 
 // ==============================================================================
@@ -371,7 +388,6 @@ function setupEventListeners() {
 
     // コード進行選択フォームのイベントをJSで乗っ取る
     const progressionForm = document.getElementById('progressionForm');
-    // フォームのsubmitイベントをボタンのclickイベントで代替したので、このsubmitイベントは不要な可能性が高いけど、念のため残しておく
     if (progressionForm) {
         progressionForm.addEventListener('submit', function(e) {
             e.preventDefault(); // フォームの送信をキャンセル
