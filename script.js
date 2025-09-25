@@ -3,7 +3,7 @@ const startProgressionButton = document.getElementById('start-progression-button
 const nextChordButton = document.getElementById('next-chord-button');
 const prevChordButton = document.getElementById('prev-chord-button');
 const randomProgressionButton = document.getElementById('random-progression-button');
-const currentProgressionNameDisplay = document.getElementById('current-progression-name');
+const currentProgressionNameDisplay = document.getElementById('current-progression-name'); // 削除したが、ロジックは残しておく
 const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container');
@@ -15,25 +15,13 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
-// ★★★ 最終調整: あんたの理想値に合わせて修正 ★★★
+// ★★★ 最終調整: あんたの理想値に合わせて修正済み ★★★
 
 // X軸（left）に使うべき定数：フレットの位置 (1F→6F)
 // あんたのデータ: 1F=23%, 2F=43%, 3F=65% を基に調整
 const FRET_POSITIONS = [23, 43, 65, 78, 88, 95]; 
 
-// Y軸（top）に使うべき定数：弦の位置 (E6→E1) ※描画ロジックで逆順に使う
-// あんたのデータ: E6=70.5%, A=63.5%, D=56.5%, G=34.5%, B=41%, E1=49% 
-// Y軸（top）は、弦の位置を逆順に使った配列のインデックスに対応しとるため、
-// 描画コード内で`reversedStringPositions[stringIndex]`として使われとる。
-// E6: index 0 -> reversed[0] -> top 70.5% (E1) -> これがおかしい。
-
-// 以前のロジックを維持しつつ、理想値に近づける
-// E6 -> 85.5% (一番下), E1 -> 5.5% (一番上) の想定で、間を調整
-const STRING_POSITIONS = [5.5, 21.5, 37.5, 53.5, 69.5, 85.5]; 
-// ★★★ Y軸の調整: 描画ロジックが複雑なため、STRING_POSITIONSの定義自体を再調整 ★★★
-// あんたの理想値が、[E1, B, G, D, A, E6] の並びで上から順に並んどるように見える。
-
-// E1: 49%, B: 41%, G: 34.5%, D: 56.5%, A: 63.5%, E6: 70.5% の順に定義
+// E6: 70.5%, A: 63.5%, D: 56.5%, G: 49%, B: 41%, E1: 34.5% の順に定義
 const Y_AXIS_STRING_POSITIONS = [70.5, 63.5, 56.5, 49, 41, 34.5];
 
 
@@ -124,9 +112,6 @@ function drawFretboard(containerId, chord) {
     }
     
     // ドット、開放弦、ミュートの描画
-    // E6(index 0)が一番下(70.5%)に来るように、Y_AXIS_STRING_POSITIONSを逆順に使う必要があったが、
-    // ここでY_AXIS_STRING_POSITIONSを[E6, A, D, G, B, E1]の順で定義し直すことで、逆順参照を避ける
-    
     const REVERSED_STRING_POSITIONS_FOR_TOP = [...Y_AXIS_STRING_POSITIONS].reverse();
 
     // 配列: [E6, A, D, G, B, E1]
@@ -150,7 +135,7 @@ function drawFretboard(containerId, chord) {
             dot.className = 'mute-mark';
             dot.textContent = '×';
             
-            // X軸（left）は、ミュートなので、一番左に固定（5%）。
+            // X軸（left）は、ミュートなので、一番左に固定（4%）。
             dot.style.left = '4%';
             container.appendChild(dot);
 
@@ -175,7 +160,7 @@ function startProgression(progressionName) {
     
     currentProgression = allProgressions[progressionName];
     currentChordIndex = 0;
-    currentProgressionNameDisplay.textContent = progressionName;
+    // currentProgressionNameDisplay.textContent = progressionName; // 削除
     updateChordDisplay(currentProgression, currentChordIndex);
 }
 
