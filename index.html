@@ -87,19 +87,22 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* PCサイズ時は固定幅240pxに設定し、サイズ変動を抑える */
-    width: 240px; 
+    /* PCサイズ時は固定幅240pxは削除し、親の max-width: 550px で制御 */
+    /* width: 240px; は削除 */
 }
 
-/* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (PCでの完全固定) ★★★ */
+/* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (完全レスポンシブ) ★★★ */
 #fretboard-container, #next-fretboard-container {
     position: relative;
     
-    /* PCでは元の画像サイズ(240x220px)に完全固定 */
-    width: 240px; 
-    height: 220px; 
+    /* 競合の原因だった固定ピクセル値は完全削除！ */
+    /* width: 240px; */ 
+    /* height: 220px; */ 
     
-    /* padding-top, height: 0 は削除 */
+    /* レスポンシブアスペクト比固定の最強の定石に戻す */
+    padding-top: 91.66%; /* 220px/240px の比率で高さを固定 */
+    width: 100%; 
+    height: 0; /* padding-topで高さを制御するため、heightは0 */
     
     background-size: contain;
     background-repeat: no-repeat;
@@ -225,14 +228,10 @@ form {
         padding: 10px;
     }
 
-    /* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (モバイルでの固定) ★★★ */
-    #fretboard-container, #next-fretboard-container {
-        /* 幅は親要素に合わせる */
-        width: 100%; 
-        /* 高さを幅に対する比率で計算して固定。これなら幅が動いても高さは連動する */
-        height: calc(100% * 0.9166); 
-    }
-
+    /* メディアクエリ内でコンテナサイズを特にいじる必要はない。
+       width: 100% と padding-top: 91.66% が自動で適用されるため、以前の calc() も不要 */
+    /* #fretboard-container, #next-fretboard-container { height: calc(100% * 0.9166); } は削除 */
+    
     .controls {
         flex-direction: column;
     }
