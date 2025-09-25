@@ -7,22 +7,27 @@ const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container');
 
-let allProgressions = {}; // 進行名 => [コード名, ...]
-let allChords = {};       // コード名 => { displayName, lowFret, fretPositions: [E6, ..., E1] }
+let allProgressions = {}; 
+let allChords = {};       
 let currentProgression = null;
 let currentChordIndex = 0;
 let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
+// =========================================================================
+// ★★★ 最終座標調整エリア ★★★
+// =========================================================================
+
 // フレットボードの描画パラメータ
 // X軸（left）に使うべき定数：フレットの位置 (1F→6F)
-// ★★★ 修正点1: ドットの位相を全体的に微調整 ★★★
-const FRET_POSITIONS = [20, 40, 62, 75, 85, 92]; 
+// ★★★ 最終調整: イッチの画面に合わせた正確なパーセント値 ★★★
+const FRET_POSITIONS = [23, 43, 65, 78, 88, 95]; 
 
 // Y軸（top）に使うべき定数：弦の位置 (E6→E1)
-const Y_AXIS_STRING_POSITIONS = [70.5, 63.5, 56.5, 49, 41, 34.5];
+// ★★★ 最終調整: E6を71.5%に修正 ★★★
+const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5];
 
-// ★★★ 修正点2: 開放弦/ミュートのX座標を微調整 ★★★
+// 開放弦/ミュートのX座標
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
@@ -84,7 +89,7 @@ function populateProgressionSelect() {
 
 
 // =========================================================================
-// フレットボード描画 (修正済み)
+// フレットボード描画
 // =========================================================================
 
 /**
@@ -107,7 +112,7 @@ function drawFretboard(containerId, chordName) {
     const lowFret = chordData.lowFret;
     const fretPositions = chordData.fretPositions; 
 
-    // ★★★ 修正点3: 画像切り替えロジック (lowFretが2以上でfretboard2.jpgに切り替え) ★★★
+    // 画像切り替えロジック (lowFretが2以上でfretboard2.jpgに切り替え)
     const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
@@ -125,7 +130,7 @@ function drawFretboard(containerId, chordName) {
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // Y軸の位置は変更なし
+        // Y軸の位置は修正された定数を使用
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         // 描画するフレット位置を計算 (lowFretからの相対位置)
@@ -134,7 +139,6 @@ function drawFretboard(containerId, chordName) {
         if (displayFret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            // ★★★ 修正点2: X座標に定数を使用 ★★★
             dot.style.left = OPEN_MUTE_X_POSITION; 
             container.appendChild(dot);
             
@@ -142,7 +146,6 @@ function drawFretboard(containerId, chordName) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = '×';
-            // ★★★ 修正点2: X座標に定数を使用 ★★★
             dot.style.left = OPEN_MUTE_X_POSITION;
             container.appendChild(dot);
 
