@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ギター練習アプリ (GitHub Pages版)</title>
+<style>
+/* --- CSS（見た目）ここから --- */
+/* GuitarPractice.jspのCSSをほぼそのまま移植 */
+
+/* body */
+body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    background-color: #f4f4f4;
+    color: #333;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* 見出し */
+h1 {
+    color: #0056b3;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 2em;
+}
+h2 {
+    color: #0056b3;
+    margin-bottom: 0px;
+    font-size: 1.5em;
+}
+
+/* ボタン共通 */
+button {
+    padding: 8px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    margin: 3px;
+}
+button:hover {
+    background-color: #0056b3;
+}
+
+/* プルダウン */
+select {
+    padding: 6px;
+    font-size: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin: 3px;
+}
+
+/* フォームコンテナ */
+form {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* フレットボード横並びラッパー */
+.fretboard-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+
+/* フレットボード列 */
+.fretboard-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* フレットボード画像表示エリア */
+#fretboard-container, #next-fretboard-container {
+    position: relative;
+    width: 240px;
+    height: 220px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    margin: 5px auto;
+    border: 1px solid #ccc;
+}
+
+/* 押弦ドット */
+.dot{
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: #FF4500;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid black;
+    z-index: 2;
+}
+    
+/* ミュート記号 (X) */
+.mute{
+    position: absolute;
+    font-weight: 900;
+    font-size: 22px;
+    color: yellow;
+    text-shadow: 1.5px 0 black, -1.5px 0 black, 0 1.5px black, 0 -1.5px black;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+    
+/* 開放弦記号 (〇) */
+.open{
+    position: absolute;
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    color: yellow;
+    -webkit-text-stroke: 2px black;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+/* ローフレット（基準フレット）表示 */
+.low-fret-display {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    color: black;
+    padding: 2px 4px;
+    z-index: 3;
+}
+
+/* コード名表示 */
+#currentChordDisplayName, #nextChordDisplayName {
+    font-size: 3em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    line-height: 1.2;
+    min-height: 1.2em;
+}
+
+/* プログレスバー */
+.progress-bar-container {
+    width: 80%;
+    max-width: 500px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 5px auto;
+    height: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: #4CAF50;
+    text-align: center;
+    color: white;
+    line-height: 20px;
+    border-radius: 5px;
+    transition: width 0.5s ease-in-out;
+}
+
+/* その他細かい要素の配置 */
+.controls, .button-container, .auto-update-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+/* --- CSS（見た目）ここまで --- */
+</style>
+</head>
+<body>
+    <h1>ギター練習アプリ</h1>
+
+    <div class="controls">
+        <%-- コード進行選択フォーム --%>
+        <form id="progressionForm">
+            <div>
+                <label for="progressionSelect">コード進行:</label>
+                <%-- コード進行プルダウン (JSでオプション追加) --%>
+                <select name="progressionName" id="progressionSelect">
+                    </select>
+                <%-- 進行開始ボタン --%>
+                <button type="submit">この進行で開始</button>
+                <%-- ランダム進行生成ボタン --%>
+                <button type="button" id="randomProgressionButton">ランダム進行を生成</button>
+            </div>
+            
+            <%-- 自動更新設定 --%>
+            <div class="auto-update-controls">
+                <label for="autoUpdateTime">自動更新:</label>
+                <%-- 自動更新間隔プルダウン --%>
+                <select id="autoUpdateTime">
+                    <option value="1000">1秒</option>
+                    <option value="2000">2秒</option>
+                    <option value="3000" selected>3秒</option>
+                    <option value="4000">4秒</option>
+                    <option value="5000">5秒</option>
+                </select>
+                <%-- 自動更新開始/停止ボタン --%>
+                <button id="toggleAutoUpdate" type="button">再生</button>
+            </div>
+        </form>
+    </div>
+
+    <%-- 現在/次のコード表示エリア --%>
+    <div class="fretboard-wrapper">
+        <%-- 現在のコード列 --%>
+        <div class="fretboard-column">
+            <div class="fretboard-label">現在のコード</div>
+            <%-- 現在のコード名 --%>
+            <h2 id="currentChordDisplayName"></h2>
+            <%-- 現在のコードフレットボード --%>
+            <div id="fretboard-container">
+            </div>
+            <div class="button-container">
+                <%-- 前のコードボタン --%>
+                <button id="prevChordButton">前のコード</button>
+            </div>
+        </div>
+
+        <%-- 次のコード列 --%> 
+        <div class="fretboard-column">
+            <div class="fretboard-label">次のコード</div>
+            <%-- 次のコード名 --%>
+            <h2 id="nextChordDisplayName"></h2>
+            <%-- 次のコードフレットボード --%>
+            <div id="next-fretboard-container">
+            </div>
+            <div class="button-container">
+                <%-- 次のコードボタン --%>
+                <button id="nextChordButton">次のコード</button>
+            </div>
+        </div>
+    </div>
+
+    <%-- コード進行プログレスバー --%>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <%-- JavaScriptをロード --%>
+    <script src="script.js"></script>
+</body>
+</html>
