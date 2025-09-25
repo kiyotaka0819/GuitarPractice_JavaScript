@@ -1,115 +1,50 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>ギター練習アプリ (GitHub Pages版)</title>
-    <style>
-/* --- CSS（見た目）ここから (コメント削除済み) --- */
-
-* {
-    box-sizing: border-box;
-}
+<style>
+/* index.html の <style> ブロック内 */
 body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
     text-align: center;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    box-sizing: border-box;
-    overflow-y: auto;
+    padding: 20px;
 }
 
-h1 {
-    color: #0056b3;
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-size: 2em;
-}
-h2 {
-    color: #0056b3;
-    margin-bottom: 0px;
-    font-size: 1.5em;
-}
-
-button {
-    padding: 8px 12px;
-    font-size: 15px;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
-    margin: 3px;
-}
-button:hover {
-    background-color: #0056b3;
-}
-
-select {
-    padding: 6px;
-    font-size: 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    margin: 3px;
-}
-
-form {
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.fretboard-wrapper {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 0px;
-    margin-bottom: 5px;
-}
-
-.fretboard-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
+/* フレットボードのコンテナのアスペクト比を固定 */
 #fretboard-container, #next-fretboard-container {
-    position: relative;
-    width: 240px;
-    height: 220px;
-    background-size: contain;
+    /* 必須: 子要素の絶対位置の基準にする */
+    position: relative; 
+    /* 220px (高さ) / 240px (幅) * 100% ≈ 91.66% でアスペクト比を固定 */
+    padding-top: 91.66%; 
+    width: 100%;
+    height: 0;
+    margin: 0 auto 20px;
+    overflow: hidden;
+    /* JSで設定される背景画像をここでも定義しておく */
+    background-size: contain; 
     background-repeat: no-repeat;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    margin: 5px auto;
-    background-image: url("fretboard.jpg");
+    background-position: center top; 
 }
 
-.string {
-    position: absolute;
-    height: 100%;
+/* 親要素の幅を制限して、デカくなりすぎないようにする（必要に応じて） */
+.fretboard-display {
+    width: 240px; /* PCでの最大幅 */
+    margin: 0 auto;
 }
 
+/* コード名表示 */
+.chord-display {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+#next-chord-displayname {
+    font-size: 24px;
+    color: #555;
+}
+
+/* 押弦ドット */
 .dot {
     position: absolute;
-    /* ★★★ 修正箇所: ドットのサイズをパーセントで指定 ★★★ */
-    width: 5.5%;  /* 例: 240pxの5.5%は約13.2px */
-    height: 5.5%; /* 例: 220pxの5.5%は約12.1px */
+    /* ★★★ 修正: サイズを相対値 6% に更新 ★★★ */
+    width: 6%;
+    height: 6%;
     background-color: #FF4500;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -117,37 +52,36 @@ form {
     z-index: 2;
 }
 
-/* 開放弦マークとミュートマークも同様にサイズを相対化するで！ */
-
+/* 開放弦マーク (●) */
 .open-mark {
     position: absolute;
-    /* サイズをドットと揃えるか、少し大きくする */
-    width: 5.5%;
-    height: 5.5%;
-    background-color: #FFD700; /* 例: 黄色 */
+    width: 6%;
+    height: 6%;
+    background-color: #FFD700;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     border: 2px solid black;
     z-index: 2;
     text-align: center;
-    font-size: 0; /* ●マーク自体は非表示にして背景色のみにする */
+    font-size: 0; 
 }
 
+/* ミュートマーク (×) */
 .mute-mark {
     position: absolute;
-    /* サイズはドットと同じでOK */
-    width: 5.5%;
-    height: 5.5%;
+    width: 6%;
+    height: 6%;
     background-color: transparent;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
     color: black;
-    font-size: 10px; /* Xマークのサイズは固定ピクセルでもええけど、調整してみる */
-    line-height: 1.5; /* 中央寄せ */
+    font-size: 10px; 
+    line-height: 1.5; 
     text-align: center;
 }
 
+/* ローフレット番号表示 */
 .fret-label {
     position: absolute;
     font-size: 18px;
@@ -155,160 +89,28 @@ form {
     color: black;
     padding: 2px 4px; 
     z-index: 3;
+    /* JSで top/left が設定されるので、CSSでの transform は不要だが保険で残す */
+    transform: translate(-50%, -50%);
 }
 
-#current-chord-displayname, #next-chord-displayname {
-    font-size: 3em;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 0px;
-    margin-top: 0px;
-    line-height: 1.2;
-    min-height: 1.2em;
-}
-
-.progress-bar-container {
+/* プログレスバー */
+#progress-bar-container {
     width: 80%;
-    max-width: 500px;
-    background-color: #e0e0e0;
+    max-width: 400px;
+    margin: 20px auto 10px;
+    background-color: #ddd;
     border-radius: 5px;
-    margin: 5px auto;
-    height: 20px;
+    height: 25px;
     overflow: hidden;
 }
-.progress-bar {
+#progress-bar {
     height: 100%;
     width: 0%;
     background-color: #4CAF50;
-    text-align: center;
+    text-align: right;
+    padding-right: 10px;
     color: white;
-    line-height: 20px;
-    border-radius: 5px;
-    transition: width 0.5s ease-in-out;
+    line-height: 25px;
+    font-weight: bold;
 }
-
-.controls, .button-container, .auto-update-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin: 5px 0;
-}
-
-@media (max-width: 600px) {
-
-    body {
-        padding: 10px;
-    }
-
-    .container {
-        width: 100%;
-        padding: 10px;
-    }
-
-    .fretboard-wrapper {
-        flex-direction: column;
-        gap: 20px;
-        padding: 0;
-    }
-
-    .fretboard-column {
-        width: 90%;
-        margin: 0 auto;
-        padding: 10px;
-    }
-
-    #fretboard-container, #next-fretboard-container {
-        width: 100%;
-        height: 250px;
-    }
-
-    .controls {
-        flex-direction: column;
-    }
-
-    .button-container {
-        width: 100%;
-    }
-
-    #prev-chord-button, #next-chord-button, #random-progression-button {
-        width: 50%;
-        margin-bottom: 0px;
-        padding: 12px;
-    }
-
-    .progress-bar-container {
-        width: 90%;
-        margin-bottom: 20px;
-    }
-
-    #current-chord-displayname, #next-chord-displayname {
-        font-size: 2.5em;
-    }
-}
-/* --- CSS（見た目）ここまで --- */
-    </style>
-</head>
-<body>
-    <h1>ギター練習アプリ</h1>
-
-    <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
-        データの読み込みに失敗しました。
-    </div>
-    <h2 id="current-progression-name" style="color: #000;"></h2>
-
-    <div class="controls">
-        <form id="progressionForm">
-            <div>
-                <label for="progression-select">コード進行:</label>
-                <select name="progressionName" id="progression-select">
-                </select>
-                                <button type="button" id="start-progression-button">この進行で開始</button>
-                <button type="button" id="random-progression-button">ランダム進行を生成</button>
-            </div>
-            
-            <div class="auto-update-controls">
-                <label for="auto-update-time">自動更新:</label>
-                <select id="auto-update-time">
-                    <option value="1000">1秒</option>
-                    <option value="2000">2秒</option>
-                    <option value="3000" selected>3秒</option>
-                    <option value="4000">4秒</option>
-                    <option value="5000">5秒</option>
-                </select>
-                <button id="toggle-auto-update" type="button">再生</button>
-            </div>
-        </form>
-        
-        <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
-    </div>
-
-    <div class="fretboard-wrapper">
-        <div class="fretboard-column">
-            <div class="fretboard-label">現在のコード</div>
-            <h2 id="current-chord-displayname"></h2> 
-            <div id="fretboard-container">
-            </div>
-            <div class="button-container navigation-buttons">
-                <button id="prev-chord-button">前のコード</button>
-            </div>
-        </div>
-
-        <div class="fretboard-column">
-            <div class="fretboard-label">次のコード</div>
-            <h2 id="next-chord-displayname"></h2> 
-            <div id="next-fretboard-container">
-            </div>
-            <div class="button-container navigation-buttons">
-                <button id="next-chord-button">次のコード</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="progress-bar-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+</style>
