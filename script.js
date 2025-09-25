@@ -231,10 +231,9 @@ function drawFretboardDots(chordInfo, container) {
         fretLabel.className = 'fret-label';
         fretLabel.innerText = lowFret;
         // 左側の縦方向の中央に配置
-        fretLabel.style.position = 'absolute';
-        fretLabel.style.left = '5px';
-        fretLabel.style.top = '50%';
-        fretLabel.style.transform = 'translateY(-50%)';
+        stringElement.style.position = 'absolute';
+        stringElement.style.width = '100%'; 
+        stringElement.style.height = '100%';
         container.appendChild(fretLabel);
     }
     
