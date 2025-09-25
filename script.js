@@ -16,9 +16,8 @@ let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
 
-// ★★★ 修正箇所1: FRET_POSITIONS (押弦ドットの縦位置) の安定値 ★★★
+// ★★★ 最終修正: FRET_POSITIONS (押弦ドットの縦位置) の最適値 ★★★
 // 1F, 2F, 3F... の中央にドットを配置するためのパーセンテージ。
-// 以前の値: [7.5, 23.5, 38.5, 53.0, 67.0, 80.5] -> これだと上すぎた
 const FRET_POSITIONS = [15, 30, 45, 60, 75, 88]; 
 
 // 弦の位置 (横方向) - E6からE1までの水平位置
@@ -85,7 +84,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (ドット縦位置修正済み)
+// フレットボード描画 (座標ロジック修正済み)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -113,13 +112,13 @@ function drawFretboard(containerId, chord) {
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // ドットの横位置（弦の位置）を設定
+        // 横位置（弦の位置）を設定
         dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            // ★★★ 修正箇所2: 開放弦マークは指板の画像の一番上(ネック部分)に配置する ★★★
+            // 開放弦マークは指板の画像の一番上(ネック部分)に配置
             dot.style.top = '0%'; 
             container.appendChild(dot);
             
@@ -127,7 +126,7 @@ function drawFretboard(containerId, chord) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = 'X';
-            // ★★★ 修正箇所2: ミュートマークは指板の画像の一番上(ネック部分)に配置する ★★★
+            // ミュートマークは指板の画像の一番上(ネック部分)に配置
             dot.style.top = '0%';
             container.appendChild(dot);
 
@@ -135,7 +134,7 @@ function drawFretboard(containerId, chord) {
             // 押弦 (1Fから6F)
             dot.className = 'dot';
 
-            // ★★★ 修正箇所1を反映: FRET_POSITIONS (フレットの中心) を参照 ★★★
+            // FRET_POSITIONS (フレットの中心) を参照
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
             container.appendChild(dot);
         }

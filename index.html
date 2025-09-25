@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>ギター練習アプリ (GitHub Pages版)</title>
     <style>
-/* --- CSS（見た目）ここから (コメント削除済み) --- */
+/* --- CSS（見た目）最終版 --- */
 
 * {
     box-sizing: border-box;
@@ -20,16 +20,15 @@ body {
     color: #333;
     text-align: center;
     min-height: 100vh;
-    /* Flexbox関連は削除済み */
     box-sizing: border-box;
     overflow-y: auto;
 }
 
-/* ★★★ 修正2: コンテンツ全体を中央揃えするコンテナを追加 ★★★ */
+/* コンテンツ全体を中央揃えするコンテナ */
 #container {
     display: flex;
     flex-direction: column;
-    align-items: center; /* これで画面中央に配置される */
+    align-items: center; 
     width: 100%;
 }
 
@@ -85,15 +84,13 @@ form {
     gap: 30px;
     margin-top: 0px;
     margin-bottom: 5px;
-    /* PC全画面でも幅がブレないように固定 */
-    width: 550px; 
+    width: 550px; /* PCでの表示幅を固定して安定化 */
 }
 
 .fretboard-column {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* PCサイズ時は固定幅240pxで安定化 */
     width: 240px; 
 }
 
@@ -101,15 +98,14 @@ form {
 #fretboard-container, #next-fretboard-container {
     position: relative;
     
-    /* レスポンシブアスペクト比固定の定石 */
+    /* レスポンシブアスペクト比固定 */
     padding-top: 91.66%; /* 220px/240px の比率で高さを固定 */
     width: 100%; 
-    height: 0; /* padding-topで高さを制御 */
+    height: 0; /* padding-topで高さを制御 (固定のheightは削除) */
     
     background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
-    /* ★★★ 修正3: box-sizingを追加し、borderを含めて幅を計算させることで、位相ズレを解消！ ★★★ */
     box-sizing: border-box; 
     border: 1px solid #ccc;
     margin: 5px auto;
@@ -122,9 +118,9 @@ form {
 
 .dot {
     position: absolute;
-    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
-    width: 5%; 
-    height: 5%; 
+    /* ドットのサイズを大きくしてバランスを取る */
+    width: 6%; 
+    height: 6%; 
     background-color: #FF4500;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -133,33 +129,28 @@ form {
 }
 
 /* 開放弦マークとミュートマーク */
-.open-mark {
+.open-mark, .mute-mark {
     position: absolute;
-    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
-    width: 5%;
-    height: 5%;
-    background-color: #FFD700;
+    /* ドットとサイズを合わせる */
+    width: 6%;
+    height: 6%;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    border: 2px solid black;
     z-index: 2;
+    border: 2px solid black;
     text-align: center;
-    font-size: 0; 
+    font-size: 10px; 
+    line-height: 1.5; 
+}
+
+.open-mark {
+    background-color: #FFD700;
+    font-size: 0; /* Oマークを非表示 */
 }
 
 .mute-mark {
-    position: absolute;
-    /* ★★★ 修正: 安定していたサイズに戻す (前々回の値) ★★★ */
-    width: 5%;
-    height: 5%;
     background-color: transparent;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
     color: black;
-    font-size: 10px; 
-    line-height: 1.5; 
-    text-align: center;
 }
 
 .fret-label {
@@ -219,7 +210,6 @@ form {
         flex-direction: column;
         gap: 20px;
         padding: 0;
-        /* モバイル時は幅を柔軟にする */
         width: 100%; 
     }
 
@@ -227,7 +217,6 @@ form {
         width: 90%; 
         max-width: 300px; 
         margin: 0 auto;
-        /* ★★★ 修正4: スマホで全体が見えるようにパディングを調整 ★★★ */
         padding: 5px; 
     }
     
@@ -251,11 +240,9 @@ form {
     }
 
     #current-chord-displayname, #next-chord-displayname {
-        /* ★★★ 修正4: スマホでコード名が改行されないようフォントサイズを調整 ★★★ */
         font-size: 2em;
     }
 }
-/* --- CSS（見た目）ここまで --- */
     </style>
 </head>
 <body>
@@ -318,6 +305,7 @@ form {
         <div class="progress-bar-container">
             <div class="progress-bar" id="progress-bar"></div>
         </div>
-    </div> <script src="script.js"></script>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
