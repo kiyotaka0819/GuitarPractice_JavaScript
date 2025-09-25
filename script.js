@@ -169,7 +169,7 @@ function initializeProgression(progressionName) {
 
 // ==============================================================================
 // 3. 表示更新とイベントハンドラ
-// ==============================================================================
+//==============================================================================
 
 /**
  * フレットボードの表示を更新
@@ -241,12 +241,12 @@ function drawFretboardDots(chordInfo, container) {
         const stringElement = document.createElement('div');
         stringElement.className = `string string-${i}`;
         
-        // ★★★ 修正：重なり防止のため、横位置だけJSで設定し直す ★★★
+        // ★★★ 修正：横の位置計算を復元（重なり防止） ★★★
         stringElement.style.position = 'absolute';
         stringElement.style.width = '16%'; // ドットを内包できる程度の幅
         stringElement.style.height = '100%';
         stringElement.style.top = '0';
-        stringElement.style.left = `${5 + i * 16}%`; // 5%から始めて16%ずつ広げる (横に並べるために必須)
+        stringElement.style.left = `${5 + i * 16}%`; // 5%から始めて16%ずつ広げる
         // ★★★ 修正ここまで ★★★
         
         if (stringPos === -1) {
@@ -273,8 +273,13 @@ function drawFretboardDots(chordInfo, container) {
                 fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置
             }
             
-            // ★★★ 修正：縦位置はCSSに任せるため、何も設定しない ★★★
-            // dot.style.top = '...' や dot.setAttribute('data-fret', ...) は全て削除
+            // ★★★ 修正：縦の位置計算を復元（最初に合っていたロジック） ★★★
+            if (fretNumber >= 1 && fretNumber <= 5) {
+                // 1フレット目の中央にドットを配置 (20%間隔で)
+                dot.style.top = `${fretNumber * 20 - 10}%`; 
+            } else {
+                dot.style.display = 'none'; 
+            }
             // ★★★ 修正ここまで ★★★
             
             stringElement.appendChild(dot);
