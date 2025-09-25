@@ -83,7 +83,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (縦横軸の入れ替え修正済)
+// フレットボード描画 (縦横軸の入れ替え修正)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -109,13 +109,13 @@ function drawFretboard(containerId, chord) {
     
     // ドット、開放弦、ミュートの描画
     // 配列: [E6, A, D, G, B, E1]
-    // stringIndex: 0 (E6) -> X軸(左端), fret: (1, 2, 3...) -> Y軸(下へ)
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // dot.style.left (X軸) は弦の位置 (STRING_POSITIONS) を使う
+        // ★★★ 修正: dot.style.left (X軸) は弦の位置 (STRING_POSITIONS) を使う
         dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
+        // 開放弦/ミュートの処理は特別なため、分けて処理する
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
@@ -133,7 +133,7 @@ function drawFretboard(containerId, chord) {
             // 押弦 (1Fから6F)
             dot.className = 'dot';
 
-            // dot.style.top (Y軸) はフレットの位置 (FRET_POSITIONS) を使う
+            // ★★★ 修正: dot.style.top (Y軸) はフレットの位置 (FRET_POSITIONS) を使う
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
             container.appendChild(dot);
         }
