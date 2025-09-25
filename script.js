@@ -23,7 +23,7 @@ const Y_AXIS_STRING_POSITIONS = [70.5, 63.5, 56.5, 49, 41, 34.5];
 // =========================================================================
 
 // ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwZizOpDP99I4mKEujhbXGEAory8rEA5t4e9XsVw8we/dev'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
