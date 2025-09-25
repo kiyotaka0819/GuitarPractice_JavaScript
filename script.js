@@ -1,404 +1,402 @@
-// script.js の全文
+// ★★★ 必須: ここにGASのデプロイURLを貼り付ける！ ★★★
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec';
 
-// =====================================================================
-// ★★★ GAS連携とグローバル変数 ★★★
-// =====================================================================
+// コード情報と進行情報（サーバーから取得後に更新される）
+let CHORD_DATA_MAP = {};
+let CHORD_PROGRESSIONS_MAP = {};
 
+// 現在の練習状態
+let currentProgressionName = 'C-G-Am-F';
+let currentChordIndex = 0;
+let autoUpdateIntervalId = null; // 自動更新のインターバルID
 
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
-
-// グローバル変数
-let CHORD_DATA_MAP = {}; 
-let CHORD_PROGRESSIONS_MAP = {}; 
-let currentProgressionName = 'Random'; // 初期進行名
-
-// 自動更新用の変数
-let autoUpdateIntervalId = null; 
-let currentChordIndex = 0; // 現在のコード位置 (進行中)
-
-// フレットのX座標の基準 (index.htmlのCSS/画像サイズに依存)
-const fretLefts = [10, 55, 105, 153, 203, 235]; 
-// 1弦から6弦のY座標の基準
-const stringTops = [75, 92, 109, 126, 143, 158]; 
-
-
-// UI要素の定義
-const progressionSelect = document.getElementById('progressionSelect');
-const nextChordButton = document.getElementById('nextChordButton');
-const prevChordButton = document.getElementById('prevChordButton');
-const randomProgressionButton = document.getElementById('randomProgressionButton');
-const toggleAutoUpdateButton = document.getElementById('toggleAutoUpdate');
-const autoUpdateTimeSelect = document.getElementById('autoUpdateTime');
-
+// DOM要素
 const fretboardContainer = document.getElementById('fretboard-container');
 const nextFretboardContainer = document.getElementById('next-fretboard-container');
-const currentChordDisplayNameElement = document.getElementById('currentChordDisplayName');
-const nextChordDisplayNameElement = document.getElementById('nextChordDisplayName');
-const progressBar = document.getElementById('progressBar');
+const currentChordDisplayNameElement = document.getElementById('current-chord-displayname');
+const nextChordDisplayNameElement = document.getElementById('next-chord-displayname');
+const progressionSelect = document.getElementById('progression-select');
+const currentProgressionNameElement = document.getElementById('current-progression-name');
+const progressBar = document.getElementById('progress-bar');
+const prevChordButton = document.getElementById('prev-chord-button');
+const nextChordButton = document.getElementById('next-chord-button');
+const randomProgressionButton = document.getElementById('random-progression-button');
+const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
+const autoUpdateTimeSelect = document.getElementById('auto-update-time');
+const errorContainer = document.getElementById('error-container');
 
+// ==============================================================================
+// 1. データ取得と初期化
+// ==============================================================================
 
-// =====================================================================
-// ★★★ GAS連携と初期化ロジック ★★★
-// =====================================================================
-
-// GASからコードと進行の全データを取得する
-async function loadChordDataFromGas() {
+/**
+ * GASからコードと進行データを取得する
+ */
+async function fetchChordData() {
     try {
         const response = await fetch(GAS_API_URL);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTPエラー! ステータス: ${response.status}`);
         }
-        const data = await response.json(); 
+        const data = await response.json();
         
-        CHORD_DATA_MAP = data.chords; 
-        CHORD_PROGRESSIONS_MAP = data.progressions; 
-        
-        console.log("スプレッドシートから全データをロードしました。");
+        if (data.error) {
+            // GAS側でエラーが検出された場合 (例: シートがない)
+            throw new Error(`GASエラー: ${data.message || data.error}`);
+        }
 
-        initializeApp();
+        CHORD_DATA_MAP = data.chords;
+        CHORD_PROGRESSIONS_MAP = data.progressions;
+
+        // エラーを非表示
+        errorContainer.style.display = 'none';
         
-    } catch (e) {
-        console.error("GASからのデータロードに失敗しました。ローカルのフォールバックデータを使用します。", e);
-        
-        // ★★★ データロード失敗時の最低限のフォールバックデータ ★★★
-        CHORD_DATA_MAP = {
-            "C": { displayName: "C", lowFret: 0, fretPositions: [-1, 3, 2, 0, 1, 0] },
-            "G": { displayName: "G", lowFret: 0, fretPositions: [3, 2, 0, 0, 0, 3] },
-            "Am": { displayName: "Am", lowFret: 0, fretPositions: [-1, 0, 2, 2, 1, 0] },
-            "Random": { displayName: "Random", lowFret: 0, fretPositions: [0, 0, 0, 0, 0, 0] }
-        };
-        CHORD_PROGRESSIONS_MAP = {
-            "Random": ["C", "G", "Am", "F"], // Fはデータ不足だがランダム進行として定義
-            "C_Only": ["C"]
-        };
-        // ----------------------------------------------------
-        
-        initializeApp(); 
+    } catch (error) {
+        console.error('データの読み込みに失敗しました:', error);
+        errorContainer.innerText = 'データの読み込みに失敗しました。GASのURLとデプロイ設定を確認してください。';
+        errorContainer.style.display = 'block';
+        throw error; // 呼び出し元にエラーを伝える
     }
 }
-
-// アプリの初期化と一時選択進行のチェック
-function initializeApp() {
-    // 進行選択プルダウンを初期化（デフォルトのみ表示）
-    initializeProgressionSelect();
-    
-    // ★★★ 進行一覧ページから一時選択された進行をチェックし、あればロードする ★★★
-    const tempProgressionName = localStorage.getItem('tempProgressionSelection');
-    if (tempProgressionName && CHORD_PROGRESSIONS_MAP[tempProgressionName]) {
-        currentProgressionName = tempProgressionName;
-        // プルダウンに一時進行のオプションを追加して選択
-        addTemporaryProgressionOption(tempProgressionName); 
-        console.log(`進行一覧から "${tempProgressionName}" をロードしました。`);
-        
-        // 使用後はlocalStorageから削除
-        localStorage.removeItem('tempProgressionSelection');
-    }
-    
-    // 初期進行で表示を始める 
-    const targetProgression = CHORD_PROGRESSIONS_MAP[currentProgressionName] 
-        ? currentProgressionName 
-        : Object.keys(CHORD_PROGRESSIONS_MAP)[0]; // なければ最初の進行を使う
-
-    if (targetProgression) {
-        initializeProgression(targetProgression);
-    } else {
-        currentChordDisplayNameElement.textContent = "データなし";
-        nextChordDisplayNameElement.textContent = "データなし";
-    }
-    
-    // 各種イベントリスナーの設定
-    setupEventListeners();
-}
-
-// プルダウンを初期化（デフォルト進行と一覧への導線のみ）
-function initializeProgressionSelect() {
-    const selectElement = document.getElementById('progressionSelect');
-    selectElement.innerHTML = ''; 
-
-    // 頻繁に使うデフォルトの進行リストを定義 (スプシに存在するものが優先される)
-    const DEFAULT_PROGRESSION_NAMES = ['Random', 'Simple', 'Pachelbel']; 
-    
-    // 1. デフォルト進行のオプションを追加
-    for (const name of DEFAULT_PROGRESSION_NAMES) {
-        if (CHORD_PROGRESSIONS_MAP[name]) {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            selectElement.appendChild(option);
-        }
-    }
-    
-    // 2. 「進行一覧から追加」用の特別なオプションを追加
-    const customOption = document.createElement('option');
-    customOption.value = 'goToProgressionList';
-    customOption.textContent = '--- 進行一覧から追加 ---';
-    selectElement.appendChild(customOption);
-    
-    // ロードされた進行を選択状態にする
-    selectElement.value = currentProgressionName;
-}
-
-// 進行一覧から戻ってきたときに一時的にオプションを追加する
-function addTemporaryProgressionOption(progressionName) {
-    const selectElement = document.getElementById('progressionSelect');
-    
-    // 新しいオプションを一番上に追加
-    const option = document.createElement('option');
-    option.value = progressionName;
-    option.textContent = `▶️ ${progressionName} (一時)`;
-    selectElement.insertBefore(option, selectElement.firstChild);
-    selectElement.value = progressionName;
-}
-
-// イベントリスナー設定の関数 (initializeAppから呼ばれる)
-function setupEventListeners() {
-    const progressionForm = document.getElementById('progressionForm');
-    
-    // フォーム送信イベントの修正
-    progressionForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        const selectedValue = progressionSelect.value;
-        
-        if (selectedValue === 'goToProgressionList') {
-            // 一覧へ移動
-            window.location.href = 'progressions.html'; 
-            return;
-        }
-        
-        // 既存の処理（initリクエストの送信）
-        sendAjaxRequest('init', selectedValue);
-    });
-    
-    // 既存のボタンイベントリスナー
-    prevChordButton.addEventListener('click', function() {
-        sendAjaxRequest('prev'); 
-    });
-
-    nextChordButton.addEventListener('click', function() {
-        sendAjaxRequest('next'); 
-    });
-
-    randomProgressionButton.addEventListener('click', function() {
-        progressionSelect.value = 'Random'; 
-        sendAjaxRequest('init', 'Random');
-    });
-
-    // 自動更新イベントリスナー設定
-    toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
-    // プルダウン変更時、自動更新中なら停止後新しい間隔で再開
-    autoUpdateTimeSelect.addEventListener('change', function() {
-        if (autoUpdateIntervalId !== null) {
-            stopAutoUpdate();
-            startAutoUpdate(); 
-        }
-    });
-}
-
-// =====================================================================
-// ★★★ アプリコアロジック ★★★
-// =====================================================================
 
 /**
- * コード情報を元にフレットボードにドットを描画する関数
+ * ページロード時の初期化
  */
-function drawFretboardDots(chordInfo, fretboardContainer) {
-    // 既存のドットをクリア
-    fretboardContainer.innerHTML = '';
-    
-    // 画像URLの修正 (.jpgを使用)
-    const fretboardImageBase = 'fretboard';
-    // lowFretは1フレット(0)から数えるため、6フレット以上(5を超える)ならfretboard2.jpg
-    const imageSuffix = (chordInfo.lowFret > 5) ? '2' : ''; 
-    fretboardContainer.style.backgroundImage = `url('${fretboardImageBase}${imageSuffix}.jpg')`; 
+async function initializeApp() {
+    try {
+        await fetchChordData();
+        populateProgressionSelect();
+        initializeProgression(currentProgressionName);
 
-    // lowFretが1より大きい場合は、基準フレットを表示
-    if (chordInfo.lowFret > 1) {
-        const lowFretDisplay = document.createElement('div');
-        lowFretDisplay.className = 'low-fret-display';
-        lowFretDisplay.textContent = chordInfo.lowFret;
-        lowFretDisplay.style.top = '10px';
-        lowFretDisplay.style.left = '5px';
-        fretboardContainer.appendChild(lowFretDisplay);
-    }
-
-    // 6弦から1弦までループ
-    for (let i = 0; i < chordInfo.fretPositions.length; i++) {
-        // i=0が6弦, i=5が1弦
-        const stringFret = chordInfo.fretPositions[i];
-        const stringIndex = 5 - i; // 0:6弦 -> 5:1弦 (stringTopsの配列と逆順)
-
-        let element;
-        let xPos;
-        let yPos = stringTops[stringIndex]; // 弦のY位置
-
-        if (stringFret === -1) {
-            // ミュート (X)
-            element = document.createElement('div');
-            element.className = 'mute';
-            element.textContent = 'X';
-            xPos = fretLefts[0]; // 0フレット付近
-        } else if (stringFret === 0) {
-            // 開放弦 (〇)
-            element = document.createElement('div');
-            element.className = 'open';
-            element.textContent = '〇';
-            xPos = fretLefts[0];
-        } else {
-            // 押弦ドット
-            element = document.createElement('div');
-            element.className = 'dot';
-            
-            // 相対フレット位置の計算 (lowFretが0なら relativeFret = stringFret)
-            const relativeFret = stringFret - chordInfo.lowFret;
-            if (relativeFret >= 1 && relativeFret <= 5) {
-                // 1フレットから5フレットの範囲
-                xPos = fretLefts[relativeFret];
-            } else {
-                // 表示範囲外またはエラー
-                continue; 
-            }
-        }
-
-        element.style.left = `${xPos}px`;
-        element.style.top = `${yPos}px`;
-        fretboardContainer.appendChild(element);
+    } catch (error) {
+        // エラー発生時は、データがない状態で初期化を試みる
+        console.warn('データ取得失敗後の初期化:', error);
     }
 }
 
+/**
+ * プルダウンメニューにコード進行を追加
+ */
+function populateProgressionSelect() {
+    progressionSelect.innerHTML = ''; // 一旦クリア
+    for (const name in CHORD_PROGRESSIONS_MAP) {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        progressionSelect.appendChild(option);
+    }
+    // 初期値を設定
+    progressionSelect.value = currentProgressionName;
+}
+
+
+// ==============================================================================
+// 2. ランダム進行生成ロジック (今回追加/修正した部分)
+// ==============================================================================
 
 /**
- * コード進行を初期化し、最初のコードと次のコードを表示する
+ * CHORD_DATA_MAPからランダムに16個のコードを選んで進行を生成する
+ */
+function generateRandomProgression() {
+    const allChords = Object.keys(CHORD_DATA_MAP);
+    if (allChords.length === 0) return ['C']; // フォールバック
+    
+    const randomProgression = [];
+    const progressionLength = 16; // ランダムは16コードとする
+
+    for (let i = 0; i < progressionLength; i++) {
+        const randomIndex = Math.floor(Math.random() * allChords.length);
+        randomProgression.push(allChords[randomIndex]);
+    }
+    
+    // 生成した進行を一時的にCHORD_PROGRESSIONS_MAPに保存
+    CHORD_PROGRESSIONS_MAP['Random'] = randomProgression;
+    return randomProgression;
+}
+
+/**
+ * 選択された進行を初期化する
  */
 function initializeProgression(progressionName) {
+    
+    if (progressionName === 'Random') {
+        // Randomが選択されたらランダム進行を生成
+        generateRandomProgression();
+        // generateRandomProgressionがCHORD_PROGRESSIONS_MAP['Random']を更新するので、
+        // そのまま下の処理に進める
+    }
+    
     const chords = CHORD_PROGRESSIONS_MAP[progressionName];
-    if (!chords || chords.length === 0) return;
+    if (!chords || chords.length === 0) {
+        console.error(`進行名 ${progressionName} のデータが見つかりません。`);
+        return;
+    }
     
     currentProgressionName = progressionName;
     currentChordIndex = 0;
     
-    // 最初のコードを表示
-    const currentChordKey = chords[currentChordIndex];
-    const nextChordKey = chords.length > 1 ? chords[currentChordIndex + 1] : chords[0]; 
-    
-    const currentChordInfo = CHORD_DATA_MAP[currentChordKey];
-    const nextChordInfo = CHORD_DATA_MAP[nextChordKey];
+    // 表示を更新
+    currentProgressionNameElement.innerText = progressionName;
+    updateDisplay();
+}
 
-    // 表示更新
-    updateDisplay(currentChordInfo, nextChordInfo);
-    updateProgressBar();
-    
-    // 自動更新がONならリセット
-    if (autoUpdateIntervalId !== null) {
-        stopAutoUpdate();
-        startAutoUpdate();
+// ==============================================================================
+// 3. 表示更新とイベントハンドラ
+// ==============================================================================
+
+/**
+ * フレットボードの表示を更新
+ */
+function updateDisplay() {
+    const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
+    if (!chords || chords.length === 0) return;
+
+    // 現在のコード情報
+    const currentChordName = chords[currentChordIndex];
+    const currentChordInfo = CHORD_DATA_MAP[currentChordName];
+
+    // 次のコード情報 (進行の最後までいったら null)
+    const nextChordName = chords[currentChordIndex + 1];
+    const nextChordInfo = nextChordName ? CHORD_DATA_MAP[nextChordName] : null;
+
+    // 現在のコードの更新
+    if (currentChordInfo) {
+        currentChordDisplayNameElement.innerText = currentChordInfo.displayName;
+        drawFretboardDots(currentChordInfo, fretboardContainer);
+    } else {
+        currentChordDisplayNameElement.innerText = currentChordName + " (データなし)";
+        drawEmptyFretboard(fretboardContainer);
     }
+
+    // 次のコードの更新
+    if (nextChordInfo) {
+        nextChordDisplayNameElement.innerText = nextChordInfo.displayName;
+        drawFretboardDots(nextChordInfo, nextFretboardContainer);
+    } else {
+        nextChordDisplayNameElement.innerText = "コードなし";
+        drawEmptyFretboard(nextFretboardContainer);
+    }
+
+    updateProgressBar();
+    updateButtonStates();
+}
+
+/**
+ * 押弦情報を元にフレットボードを描画
+ */
+function drawFretboardDots(chordInfo, container) {
+    container.innerHTML = '';
+    container.className = 'fretboard'; // クラスをリセット
+    container.style.backgroundImage = 'url("fretboard.png")'; // 背景画像を設定
+    
+    const fretPositions = chordInfo.fretPositions;
+    const lowFret = chordInfo.lowFret;
+    const isBarChord = lowFret > 0;
+    
+    // フレット番号の表示
+    if (isBarChord) {
+        const fretLabel = document.createElement('div');
+        fretLabel.className = 'fret-label';
+        fretLabel.innerText = lowFret;
+        container.appendChild(fretLabel);
+    }
+    
+    // 6弦から1弦までループ
+    for (let i = 0; i < 6; i++) {
+        const stringPos = fretPositions[i]; // 6弦がi=0, 1弦がi=5
+        const stringElement = document.createElement('div');
+        stringElement.className = `string string-${i}`;
+        
+        if (stringPos === -1) {
+            // ミュート(×)
+            const mute = document.createElement('div');
+            mute.className = 'mute-mark';
+            mute.innerText = '×';
+            stringElement.appendChild(mute);
+        } else if (stringPos === 0) {
+            // 開放弦(○)
+            const open = document.createElement('div');
+            open.className = 'open-mark';
+            stringElement.appendChild(open);
+        } else {
+            // 押弦ドット
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            
+            // ドットの位置を計算 (CSSで定義されたフレット幅に基づいて調整)
+            let fretNumber = stringPos;
+            if (isBarChord) {
+                fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置
+            }
+            
+            // Fret 1 (fretNumber=1) は 1フレット目の中央に配置
+            dot.style.top = `${(fretNumber * 10) + 5}%`; // 適当なCSS位置
+            
+            // Fretboard.cssでドットの位置と形を定義していることを前提
+            dot.setAttribute('data-fret', fretNumber);
+            
+            stringElement.appendChild(dot);
+        }
+        container.appendChild(stringElement);
+    }
+}
+
+/**
+ * 空のフレットボードを描画
+ */
+function drawEmptyFretboard(container) {
+    container.innerHTML = '';
+    container.className = 'fretboard empty';
+    container.style.backgroundImage = 'url("fretboard.png")'; 
 }
 
 
 /**
- * 「次へ」「前へ」などの操作に応じたコードの切り替えと表示更新
+ * プログレスバーの更新
  */
-function sendAjaxRequest(action, newProgressionName = null) {
-    stopAutoUpdate(); // 手動操作時は自動更新を一時停止
-
-    // 進行切り替え (init)
-    if (action === 'init' && newProgressionName) {
-        initializeProgression(newProgressionName);
-        return;
-    }
-
+function updateProgressBar() {
     const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
     if (!chords || chords.length === 0) return;
-
-    let nextIndex = currentChordIndex;
-
-    // インデックスの計算
-    if (action === 'next' || action === 'auto') {
-        nextIndex = (currentChordIndex + 1) % chords.length;
-    } else if (action === 'prev') {
-        nextIndex = (currentChordIndex - 1 + chords.length) % chords.length;
-    } else {
-        return; 
-    }
     
-    currentChordIndex = nextIndex;
-
-    // コード情報取得
-    const currentChordKey = chords[currentChordIndex];
-    const nextChordKey = chords[(currentChordIndex + 1) % chords.length];
-    
-    const currentChordInfo = CHORD_DATA_MAP[currentChordKey];
-    const nextChordInfo = CHORD_DATA_MAP[nextChordKey];
-
-    // 表示更新
-    updateDisplay(currentChordInfo, nextChordInfo);
-    updateProgressBar();
+    const percentage = ((currentChordIndex + 1) / chords.length) * 100;
+    progressBar.style.width = percentage + '%';
+    progressBar.innerText = `${currentChordIndex + 1} / ${chords.length}`;
 }
 
-// 表示内容をまとめて更新
-function updateDisplay(currentChordInfo, nextChordInfo) {
-    if (currentChordInfo) {
-        currentChordDisplayNameElement.textContent = currentChordInfo.displayName;
-        drawFretboardDots(currentChordInfo, fretboardContainer);
-    } else {
-        currentChordDisplayNameElement.textContent = "コードデータなし";
-        fretboardContainer.innerHTML = '';
-        fretboardContainer.style.backgroundImage = "none";
-    }
-
-    if (nextChordInfo) {
-        nextChordDisplayNameElement.textContent = nextChordInfo.displayName;
-        drawFretboardDots(nextChordInfo, nextFretboardContainer);
-    } else {
-        nextChordDisplayNameElement.textContent = "次のコードなし";
-        nextFretboardContainer.innerHTML = '';
-        nextFretboardContainer.style.backgroundImage = "none";
-    }
+/**
+ * ボタンの有効/無効状態を更新
+ */
+function updateButtonStates() {
+    const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
+    if (!chords) return;
+    
+    prevChordButton.disabled = currentChordIndex === 0;
+    nextChordButton.disabled = currentChordIndex === chords.length - 1;
 }
 
+/**
+ * 進行のインデックスを操作
+ */
+function navigateProgression(direction) {
+    const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
+    if (!chords) return;
+    
+    if (direction === 'next' && currentChordIndex < chords.length - 1) {
+        currentChordIndex++;
+    } else if (direction === 'prev' && currentChordIndex > 0) {
+        currentChordIndex--;
+    }
+    
+    // 進行の最後で「次のコード」が押されたら、最初に戻る
+    if (direction === 'next' && currentChordIndex === chords.length - 1) {
+        currentChordIndex = 0;
+    }
+    
+    updateDisplay();
+}
 
-// 自動更新の開始/停止ロジック
+// ==============================================================================
+// 4. 自動更新
+// ==============================================================================
+
+/**
+ * 自動更新を開始する
+ */
 function startAutoUpdate() {
-    stopAutoUpdate(); 
-    const intervalTime = parseInt(autoUpdateTimeSelect.value);
-    autoUpdateIntervalId = setInterval(function() {
-        sendAjaxRequest('auto');
+    const intervalTime = parseInt(autoUpdateTimeSelect.value); // ms
+    if (isNaN(intervalTime) || intervalTime <= 0) return;
+
+    // 既に動いている場合は何もしない
+    if (autoUpdateIntervalId !== null) return; 
+
+    // 1. ボタンを停止モードに
+    toggleAutoUpdateButton.innerText = '自動更新停止';
+    toggleAutoUpdateButton.classList.add('active');
+
+    // 2. インターバルを開始
+    autoUpdateIntervalId = setInterval(() => {
+        const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
+        if (!chords) return stopAutoUpdate(); 
+
+        // 進行の最後までいったら、最初に戻ってループ
+        if (currentChordIndex === chords.length - 1) {
+            currentChordIndex = 0;
+        } else {
+            currentChordIndex++;
+        }
+        updateDisplay();
     }, intervalTime);
-    toggleAutoUpdateButton.textContent = '一時停止';
 }
 
+/**
+ * 自動更新を停止する
+ */
 function stopAutoUpdate() {
     if (autoUpdateIntervalId !== null) {
         clearInterval(autoUpdateIntervalId);
         autoUpdateIntervalId = null;
-        toggleAutoUpdateButton.textContent = '再生';
     }
+    // ボタンを再生モードに
+    toggleAutoUpdateButton.innerText = '自動更新開始';
+    toggleAutoUpdateButton.classList.remove('active');
 }
 
+/**
+ * 自動更新のトグル
+ */
 function toggleAutoUpdate() {
-    if (autoUpdateIntervalId === null) {
-        startAutoUpdate();
-    } else {
+    if (autoUpdateIntervalId !== null) {
         stopAutoUpdate();
+    } else {
+        startAutoUpdate();
     }
 }
 
-// プログレスバーの更新
-function updateProgressBar() {
-    const chords = CHORD_PROGRESSIONS_MAP[currentProgressionName];
-    if (!chords || chords.length === 0) {
-        progressBar.style.width = '0%';
-        progressBar.textContent = '';
-        return;
+
+// ==============================================================================
+// 5. イベントリスナーの設定
+// ==============================================================================
+
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// 「前のコード」ボタン
+prevChordButton.addEventListener('click', function() {
+    navigateProgression('prev');
+});
+
+// 「次のコード」ボタン
+nextChordButton.addEventListener('click', function() {
+    navigateProgression('next');
+});
+
+// ランダム進行生成/初期化
+randomProgressionButton.addEventListener('click', function() {
+    // 既存の自動更新を停止
+    stopAutoUpdate();
+    
+    progressionSelect.value = 'Random'; 
+    initializeProgression('Random');
+});
+
+// プルダウン変更時の処理
+progressionSelect.addEventListener('change', function() {
+    const selectedProgression = this.value;
+    
+    // 既存の自動更新を停止
+    stopAutoUpdate();
+    
+    // 新しい進行で初期化
+    initializeProgression(selectedProgression);
+});
+
+
+// 自動更新イベントリスナー
+toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
+
+// プルダウン変更時、自動更新中なら停止後新しい間隔で再開
+autoUpdateTimeSelect.addEventListener('change', function() {
+    if (autoUpdateIntervalId !== null) {
+        stopAutoUpdate();
+        startAutoUpdate(); 
     }
-
-    const progressPercent = ((currentChordIndex + 1) / chords.length) * 100;
-    progressBar.style.width = `${progressPercent}%`;
-    progressBar.textContent = `${currentChordIndex + 1} / ${chords.length}`;
-}
-
-
-// =====================================================================
-// ★★★ アプリ起動時にデータロードを開始 ★★★
-// =====================================================================
-document.addEventListener('DOMContentLoaded', loadChordDataFromGas);
+});
