@@ -83,7 +83,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (縦横軸の入れ替えを正しく修正)
+// フレットボード描画 (縦横軸の完全入れ替え修正)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -102,6 +102,7 @@ function drawFretboard(containerId, chord) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = chord.fret;
+        // ラベルの位置も入れ替わった前提で調整
         fretLabel.style.left = '4%'; 
         fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
@@ -109,16 +110,19 @@ function drawFretboard(containerId, chord) {
     
     // ドット、開放弦、ミュートの描画
     // 配列: [E6, A, D, G, B, E1]
-    // stringIndex: 0 (E6) -> X軸(左端), fret: (1, 2, 3...) -> Y軸(下へ)
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // ★★★ 最終修正: dot.style.left (X軸) は弦の位置 (STRING_POSITIONS) を使う ★★★
-        dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
-
+        // ★★★ X軸 (left) に FRET_POSITIONS を使う（フレット番号のズレを修正）★★★
+        // ここが縦横入れ替わりの核心！
+        
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
+            
+            // X軸（横位置）は、弦の位置（STRING_POSITIONS）をそのまま使う。
+            // Y軸（縦位置）は、開放弦なので、一番上に固定（0%）。
+            dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
             dot.style.top = '0%'; 
             container.appendChild(dot);
             
@@ -126,15 +130,23 @@ function drawFretboard(containerId, chord) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = 'X';
+            
+            // X軸（横位置）は、弦の位置（STRING_POSITIONS）をそのまま使う。
+            // Y軸（縦位置）は、ミュートなので、一番上に固定（0%）。
+            dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
             dot.style.top = '0%';
             container.appendChild(dot);
 
         } else if (fret >= 1 && fret <= 6) { 
             // 押弦 (1Fから6F)
             dot.className = 'dot';
+            
+            // ★★★ X軸（横位置）は、弦の位置（STRING_POSITIONS）をそのまま使う。 ★★★
+            dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
-            // ★★★ 最終修正: dot.style.top (Y軸) はフレットの位置 (FRET_POSITIONS) を使う ★★★
+            // ★★★ Y軸（縦位置）は、フレットの位置（FRET_POSITIONS）を使う。 ★★★
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
+            
             container.appendChild(dot);
         }
     });
