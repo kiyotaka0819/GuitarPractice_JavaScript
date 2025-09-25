@@ -105,10 +105,11 @@ form {
     height: 100%;
 }
 
-.dot{
+.dot {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    /* ★★★ 修正箇所: ドットのサイズをパーセントで指定 ★★★ */
+    width: 5.5%;  /* 例: 240pxの5.5%は約13.2px */
+    height: 5.5%; /* 例: 220pxの5.5%は約12.1px */
     background-color: #FF4500;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -116,25 +117,35 @@ form {
     z-index: 2;
 }
 
-.mute-mark{
+/* 開放弦マークとミュートマークも同様にサイズを相対化するで！ */
+
+.open-mark {
     position: absolute;
-    font-weight: 900;
-    font-size: 22px;
-    color: yellow;
-    text-shadow: 1.5px 0 black, -1.5px 0 black, 0 1.5px black, 0 -1.5px black;
+    /* サイズをドットと揃えるか、少し大きくする */
+    width: 5.5%;
+    height: 5.5%;
+    background-color: #FFD700; /* 例: 黄色 */
+    border-radius: 50%;
     transform: translate(-50%, -50%);
+    border: 2px solid black;
     z-index: 2;
+    text-align: center;
+    font-size: 0; /* ●マーク自体は非表示にして背景色のみにする */
 }
 
-.open-mark{
+.mute-mark {
     position: absolute;
-    font-family: 'Noto Sans', sans-serif;
-    font-weight: 900;
-    font-size: 12px;
-    color: yellow;
-    -webkit-text-stroke: 2px black;
+    /* サイズはドットと同じでOK */
+    width: 5.5%;
+    height: 5.5%;
+    background-color: transparent;
+    border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
+    color: black;
+    font-size: 10px; /* Xマークのサイズは固定ピクセルでもええけど、調整してみる */
+    line-height: 1.5; /* 中央寄せ */
+    text-align: center;
 }
 
 .fret-label {
