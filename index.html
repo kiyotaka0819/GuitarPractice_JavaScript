@@ -20,13 +20,17 @@ body {
     color: #333;
     text-align: center;
     min-height: 100vh;
-    /* ★★★ 修正: display: flex; と関連プロパティを削除してレイアウトの変動を止める ★★★ */
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* align-items: center; */
-    /* justify-content: flex-start; */
+    /* Flexbox関連は削除済み */
     box-sizing: border-box;
     overflow-y: auto;
+}
+
+/* ★★★ 新規追加: コンテンツ全体を中央揃えするコンテナ ★★★ */
+#container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* これで画面中央に配置される */
+    width: 100%;
 }
 
 h1 {
@@ -81,21 +85,23 @@ form {
     gap: 30px;
     margin-top: 0px;
     margin-bottom: 5px;
-    max-width: 550px; 
+    /* PC全画面でも幅がブレないように固定 */
+    width: 550px; 
 }
 
 .fretboard-column {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* width: 240px; は削除済み */
+    /* PCサイズ時は固定幅240pxで安定化 */
+    width: 240px; 
 }
 
 /* フレットボードコンテナ (アスペクト比固定) */
 #fretboard-container, #next-fretboard-container {
     position: relative;
     
-    /* レスポンシブアスペクト比固定 */
+    /* レスポンシブアスペクト比固定の定石 */
     padding-top: 91.66%; /* 220px/240px の比率で高さを固定 */
     width: 100%; 
     height: 0; /* padding-topで高さを制御 */
@@ -203,17 +209,15 @@ form {
     body {
         padding: 10px;
     }
-
-    .container {
-        width: 100%;
-        padding: 10px;
-    }
+    
+    /* モバイル時は#containerが中央揃えを維持する */
 
     .fretboard-wrapper {
         flex-direction: column;
         gap: 20px;
         padding: 0;
-        max-width: none; 
+        /* モバイル時は幅を柔軟にする */
+        width: 100%; 
     }
 
     .fretboard-column {
@@ -250,65 +254,66 @@ form {
     </style>
 </head>
 <body>
-    <h1>ギター練習アプリ</h1>
+    <div id="container">
+        <h1>ギター練習アプリ</h1>
 
-    <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
-        データの読み込みに失敗しました。
-    </div>
-    <h2 id="current-progression-name" style="color: #000;"></h2>
+        <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
+            データの読み込みに失敗しました。
+        </div>
+        <h2 id="current-progression-name" style="color: #000;"></h2>
 
-    <div class="controls">
-        <form id="progressionForm">
-            <div>
-                <label for="progression-select">コード進行:</label>
-                <select name="progressionName" id="progression-select">
-                </select>
-                <button type="button" id="start-progression-button">この進行で開始</button>
-                <button type="button" id="random-progression-button">ランダム進行を生成</button>
-            </div>
+        <div class="controls">
+            <form id="progressionForm">
+                <div>
+                    <label for="progression-select">コード進行:</label>
+                    <select name="progressionName" id="progression-select">
+                    </select>
+                    <button type="button" id="start-progression-button">この進行で開始</button>
+                    <button type="button" id="random-progression-button">ランダム進行を生成</button>
+                </div>
+                
+                <div class="auto-update-controls">
+                    <label for="auto-update-time">自動更新:</label>
+                    <select id="auto-update-time">
+                        <option value="1000">1秒</option>
+                        <option value="2000">2秒</option>
+                        <option value="3000" selected>3秒</option>
+                        <option value="4000">4秒</option>
+                        <option value="5000">5秒</option>
+                    </select>
+                    <button id="toggle-auto-update" type="button">再生</button>
+                </div>
+            </form>
             
-            <div class="auto-update-controls">
-                <label for="auto-update-time">自動更新:</label>
-                <select id="auto-update-time">
-                    <option value="1000">1秒</option>
-                    <option value="2000">2秒</option>
-                    <option value="3000" selected>3秒</option>
-                    <option value="4000">4秒</option>
-                    <option value="5000">5秒</option>
-                </select>
-                <button id="toggle-auto-update" type="button">再生</button>
-            </div>
-        </form>
-        
-        <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
-    </div>
+            <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
+        </div>
 
-    <div class="fretboard-wrapper">
-        <div class="fretboard-column">
-            <div class="fretboard-label">現在のコード</div>
-            <h2 id="current-chord-displayname"></h2> 
-            <div id="fretboard-container">
+        <div class="fretboard-wrapper">
+            <div class="fretboard-column">
+                <div class="fretboard-label">現在のコード</div>
+                <h2 id="current-chord-displayname"></h2> 
+                <div id="fretboard-container">
+                </div>
+                <div class="button-container navigation-buttons">
+                    <button id="prev-chord-button">前のコード</button>
+                </div>
             </div>
-            <div class="button-container navigation-buttons">
-                <button id="prev-chord-button">前のコード</button>
+
+            <div class="fretboard-column">
+                <div class="fretboard-label">次のコード</div>
+                <h2 id="next-chord-displayname"></h2> 
+                <div id="next-fretboard-container">
+                </div>
+                <div class="button-container navigation-buttons">
+                    <button id="next-chord-button">次のコード</button>
+                </div>
             </div>
         </div>
 
-        <div class="fretboard-column">
-            <div class="fretboard-label">次のコード</div>
-            <h2 id="next-chord-displayname"></h2> 
-            <div id="next-fretboard-container">
-            </div>
-            <div class="button-container navigation-buttons">
-                <button id="next-chord-button">次のコード</button>
-            </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
         </div>
     </div>
-
-    <div class="progress-bar-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html>
