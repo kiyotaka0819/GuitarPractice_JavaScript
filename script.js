@@ -1,5 +1,5 @@
 // ★★★ 必須: ここにGASのデプロイURLを貼り付ける！ ★★★
-const GAS_API_URL = 'GASのURLをここに貼り付けてね';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec';
 
 // コード情報と進行情報（サーバーから取得後に更新される）
 let CHORD_DATA_MAP = {};
