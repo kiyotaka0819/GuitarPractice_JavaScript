@@ -109,6 +109,8 @@ form {
     background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
+    /* ★★★ 修正1: box-sizingを追加し、borderを含めて幅を計算させる ★★★ */
+    box-sizing: border-box; 
     border: 1px solid #ccc;
     margin: 5px auto;
 }
@@ -120,8 +122,9 @@ form {
 
 .dot {
     position: absolute;
-    width: 6%; 
-    height: 6%; 
+    /* ★★★ 修正2: ドットのサイズを安定値に戻す ★★★ */
+    width: 5%; 
+    height: 5%; 
     background-color: #FF4500;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -132,8 +135,9 @@ form {
 /* 開放弦マークとミュートマーク */
 .open-mark {
     position: absolute;
-    width: 6%;
-    height: 6%;
+    /* ★★★ 修正2: サイズを安定値に戻す ★★★ */
+    width: 5%;
+    height: 5%;
     background-color: #FFD700;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -145,8 +149,9 @@ form {
 
 .mute-mark {
     position: absolute;
-    width: 6%;
-    height: 6%;
+    /* ★★★ 修正2: サイズを安定値に戻す ★★★ */
+    width: 5%;
+    height: 5%;
     background-color: transparent;
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -222,7 +227,7 @@ form {
         width: 90%; 
         max-width: 300px; 
         margin: 0 auto;
-        /* ★★★ 修正: パディングを減らす ★★★ */
+        /* パディングを減らす */
         padding: 5px; 
     }
     
@@ -246,7 +251,7 @@ form {
     }
 
     #current-chord-displayname, #next-chord-displayname {
-        /* ★★★ 修正: フォントサイズを小さくする ★★★ */
+        /* フォントサイズを小さくする */
         font-size: 2em;
     }
 }
