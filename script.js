@@ -16,7 +16,7 @@ const nextFretboardContainer = document.getElementById('next-fretboard-container
 const currentChordDisplayNameElement = document.getElementById('current-chord-displayname');
 const nextChordDisplayNameElement = document.getElementById('next-chord-displayname');
 const progressionSelect = document.getElementById('progression-select');
-const currentProgressionNameElement = document.getElementById('current-progression-name'); // ★★★ 修正：クラッシュの原因はこれの欠落 ★★★
+const currentProgressionNameElement = document.getElementById('current-progression-name');
 const progressBar = document.getElementById('progress-bar');
 const prevChordButton = document.getElementById('prev-chord-button');
 const nextChordButton = document.getElementById('next-chord-button');
@@ -47,11 +47,12 @@ async function fetchChordData() {
         CHORD_DATA_MAP = data.chords;
         CHORD_PROGRESSIONS_MAP = data.progressions;
 
-        errorContainer.style.display = 'none';
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
         
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
-        // エラーコンテナの存在チェックは不要だが、コードの堅牢性のため
         if (errorContainer) {
             errorContainer.innerText = 'データの読み込みに失敗しました。GASのURLとデプロイ設定を確認してください。';
             errorContainer.style.display = 'block';
@@ -95,7 +96,6 @@ async function initializeApp() {
 
     } catch (error) {
         console.warn('初期化中にエラー:', error);
-        // initializeProgressionでクラッシュした場合は、データは読み込まれているがDOMがない可能性がある
     }
 }
 
@@ -160,9 +160,9 @@ function initializeProgression(progressionName) {
     currentProgressionName = progressionName;
     currentChordIndex = 0;
     
-    // 表示を更新
-    if (currentProgressionNameElement) { // ★★★ 修正：DOMが存在するかチェック ★★★
-        currentProgressionNameElement.innerText = progressionName; // L168のエラー箇所
+    // 表示を更新 (DOM要素の存在は既にチェック済みだが、念のため)
+    if (currentProgressionNameElement) {
+        currentProgressionNameElement.innerText = progressionName; 
     }
     updateDisplay();
 }
@@ -182,11 +182,10 @@ function updateDisplay() {
     const currentChordName = chords[currentChordIndex];
     const currentChordInfo = CHORD_DATA_MAP[currentChordName];
 
-    // ★★★ 修正箇所: 次のコード情報 (循環ロジックをここで適用) ★★★
+    // 次のコード情報 (循環ロジック)
     const nextChordIndex = (currentChordIndex + 1) % chords.length; // 進行の最後で0に戻る
     const nextChordName = chords[nextChordIndex];
     const nextChordInfo = CHORD_DATA_MAP[nextChordName];
-    // ★★★ 修正ここまで ★★★
 
     // 現在のコードの更新
     if (currentChordInfo && currentChordDisplayNameElement) {
@@ -202,7 +201,8 @@ function updateDisplay() {
         nextChordDisplayNameElement.innerText = nextChordInfo.displayName;
         drawFretboardDots(nextChordInfo, nextFretboardContainer);
     } else if (nextChordDisplayNameElement) {
-        nextChordDisplayNameElement.innerText = nextChordName + " (データなし)"; // nextChordNameは必ずある
+        // 次のコード名があるが、CHORD_DATA_MAPにデータがない場合
+        nextChordDisplayNameElement.innerText = nextChordName + " (データなし)"; 
         drawEmptyFretboard(nextFretboardContainer);
     }
 
@@ -218,8 +218,6 @@ function drawFretboardDots(chordInfo, container) {
     
     container.innerHTML = '';
     container.className = 'fretboard';
-    // CSSで背景画像を設定しているため、JSでは一旦コメントアウト
-    // container.style.backgroundImage = 'url("fretboard.png")'; 
     
     const fretPositions = chordInfo.fretPositions;
     const lowFret = chordInfo.lowFret;
@@ -230,10 +228,11 @@ function drawFretboardDots(chordInfo, container) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.innerText = lowFret;
-        // 左側の縦方向の中央に配置
-        stringElement.style.position = 'absolute';
-        stringElement.style.width = '100%'; 
-        stringElement.style.height = '100%';
+        // 位置のスタイルはHTML/CSSに任せる
+        fretLabel.style.position = 'absolute';
+        fretLabel.style.left = '5px';
+        fretLabel.style.top = '50%';
+        fretLabel.style.transform = 'translateY(-50%)';
         container.appendChild(fretLabel);
     }
     
@@ -243,11 +242,9 @@ function drawFretboardDots(chordInfo, container) {
         const stringElement = document.createElement('div');
         stringElement.className = `string string-${i}`;
         
-        // ★★★ 修正箇所: 弦の横位置をJSで直接計算し、ドットを配置する ★★★
-        // 0 (6弦) -> 12%, 1 (5弦) -> 28%, 2 (4弦) -> 44%, 3 (3弦) -> 60%, 4 (2弦) -> 76%, 5 (1弦) -> 92%
+        // ★★★ 修正：強制的な横位置計算を全て削除し、CSSに任せる ★★★
         stringElement.style.position = 'absolute';
-        stringElement.style.left = `${12 + i * 16}%`; // 弦の横位置
-        stringElement.style.width = '1px'; // 弦の幅はほぼゼロ
+        stringElement.style.width = '100%'; 
         stringElement.style.height = '100%';
         stringElement.style.top = '0';
         // ★★★ 修正ここまで ★★★
@@ -273,18 +270,12 @@ function drawFretboardDots(chordInfo, container) {
             
             let fretNumber = stringPos;
             if (isBarChord) {
-                fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置 (1～5を想定)
+                fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置
             }
             
-            // ★★★ 修正箇所: ドットの縦位置を直接設定してバグを防ぐ ★★★
-            // 縦方向の位置の調整 (1フレット目の中央: 10%, 2フレット目の中央: 30%, ...)
-            if (fretNumber >= 1 && fretNumber <= 5) { // 5フレット表示を想定
-                // 1フレット目の中央にドットを配置 (20%間隔で)
-                dot.style.top = `${fretNumber * 20 - 10}%`; 
-            } else {
-                // 5フレットを超える押弦は、フレットボード外に描画されないようにする
-                dot.style.display = 'none'; 
-            }
+            // ★★★ 修正：強制的な縦位置計算とdata-fretの追加を全て削除 ★★★
+            // 位置とサイズは全てCSSファイルに任せる
+            // dot.style.top = '...' や dot.setAttribute('data-fret', ...) は全て削除
             // ★★★ 修正ここまで ★★★
             
             stringElement.appendChild(dot);
@@ -300,7 +291,6 @@ function drawEmptyFretboard(container) {
     if (!container) return;
     container.innerHTML = '';
     container.className = 'fretboard empty';
-    // container.style.backgroundImage = 'url("fretboard.png")'; // CSSで設定済み 
 }
 
 
@@ -354,7 +344,6 @@ function navigateProgression(direction) {
 // ==============================================================================
 
 function startAutoUpdate() {
-    // ... (関数の中身は変更なし)
     const intervalTime = parseInt(autoUpdateTimeSelect.value); // ms
     if (isNaN(intervalTime) || intervalTime <= 0) return;
 
@@ -380,7 +369,6 @@ function startAutoUpdate() {
 }
 
 function stopAutoUpdate() {
-    // ... (関数の中身は変更なし)
     if (autoUpdateIntervalId !== null) {
         clearInterval(autoUpdateIntervalId);
         autoUpdateIntervalId = null;
