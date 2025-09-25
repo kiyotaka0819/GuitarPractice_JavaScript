@@ -143,7 +143,6 @@ function drawFretboardDots(chordInfo, containerElement) {
     
     // 背景画像の設定 (fretboard2.jpgの切り替えロジック)
     containerElement.style.backgroundImage = lowFretValue > 2 ? "url('fretboard2.jpg')" : "url('fretboard.jpg')";
-    // background-size: contain; はCSSで定義済みのため不要
 
     // ローフレット値表示
     if (lowFretValue > 2) {
@@ -151,10 +150,10 @@ function drawFretboardDots(chordInfo, containerElement) {
         lowFretDiv.className = 'fret-label'; 
         lowFretDiv.textContent = lowFretValue;
 
-        // ★★★ 修正箇所: あんたの新しいパーセント値に更新 ★★★
+        // ★★★ 修正箇所: あんたの新しいパーセント値に更新 (80%, 22%) ★★★
         lowFretDiv.style.position = 'absolute';
-        lowFretDiv.style.top = '80%'; // 75% -> 80% に変更
-        lowFretDiv.style.left = '22%'; // 18% -> 22% に変更
+        lowFretDiv.style.top = '80%'; 
+        lowFretDiv.style.left = '22%'; 
         lowFretDiv.style.transform = 'translate(-50%, -50%)'; 
         
         containerElement.appendChild(lowFretDiv);
