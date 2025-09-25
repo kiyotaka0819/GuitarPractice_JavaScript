@@ -148,7 +148,7 @@ function drawFretboard(containerId, chord) {
         } else if (fret === -1) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
-            dot.textContent = 'X';
+            dot.textContent = '×';
             
             // X軸（left）は、ミュートなので、一番左に固定（5%）。
             dot.style.left = '5%';
