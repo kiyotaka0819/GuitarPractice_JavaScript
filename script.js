@@ -6,16 +6,16 @@ let CHORD_DATA_MAP = {
     'C': { displayName: 'C', fretPositions: [0, 3, 2, 0, 1, 0], lowFret: 0 },
     'G': { displayName: 'G', fretPositions: [3, 2, 0, 0, 0, 3], lowFret: 0 },
     'Am': { displayName: 'Am', fretPositions: [0, 0, 2, 2, 1, 0], lowFret: 0 },
-    'F': { displayName: 'F', fretPositions: [1, 3, 3, 2, 1, 1], lowFret: 1 }, // Fコードはローフレット1の例
+    'F': { displayName: 'F', fretPositions: [1, 3, 3, 2, 1, 1], lowFret: 1 }, 
     'Bm': { displayName: 'Bm', fretPositions: [2, 2, 4, 4, 3, 2], lowFret: 2 },
     'F#m': { displayName: 'F#m', fretPositions: [2, 4, 4, 2, 2, 2], lowFret: 2 },
-    // ★★★ 追加: ローフレット値が3以上のコード (fretboard2.jpgテスト用) ★★★
+    // ローフレット値が3以上のコード (fretboard2.jpgテスト用)
     'G#m': { displayName: 'G#m', fretPositions: [4, 6, 6, 4, 4, 4], lowFret: 4 }, // 4フレットから始まるG#m
     'C#m': { displayName: 'C#m', fretPositions: [-1, 4, 6, 6, 5, 4], lowFret: 4 } // 4フレットから始まるC#m
 };
 let CHORD_PROGRESSIONS_MAP = {
     'C-G-Am-F': ['C', 'G', 'Am', 'F'],
-    'TestHighFret': ['F#m', 'C#m', 'G#m', 'G'], // ★★★ 修正: ハイフレットコードを追加 ★★★
+    'TestHighFret': ['F#m', 'C#m', 'G#m', 'G'], 
     'Random': ['C', 'G', 'Am', 'F'] 
 };
 
@@ -41,10 +41,10 @@ const errorContainer = document.getElementById('error-container');
 const startProgressionButton = document.getElementById('start-progression-button');
 const currentProgressionNameElement = document.getElementById('current-progression-name');
 
-// ★★★ 復元された絶対座標定数（正しい位相を決定するピクセル値）★★★
-const stringTops = [75, 92, 109, 126, 143, 158];
-const fretLefts = [10, 55, 105, 153, 203, 235];
-// ★★★ 復元ここまで ★★★
+// ★★★ 修正: ギター弦のY座標とフレット線のX座標をパーセントで定義 ★★★
+// (フレットボードの画像の高さ220px、幅240pxを基準とする)
+const stringTopsPercent = [34, 42, 50, 57, 65, 72]; 
+const fretLeftsPercent = [4, 23, 44, 64, 85, 98]; 
 
 
 // ==============================================================================
@@ -151,51 +151,56 @@ function drawFretboardDots(chordInfo, containerElement) {
         lowFretDiv.className = 'fret-label'; 
         lowFretDiv.textContent = lowFretValue;
 
-        // ★★★ 修正箇所: 左下（一番低い弦の下）に配置する ★★★
+        // ★★★ 修正箇所: 相対位置 (パーセント) で左下に配置する ★★★
         lowFretDiv.style.position = 'absolute';
-        // Y座標: 一番低い弦(6弦)の位置 + 25px 
-        lowFretDiv.style.top = stringTops[stringTops.length - 1] + 25 + 'px'; 
-        // X座標: ナットの位置の少し右
-        lowFretDiv.style.left = fretLefts[0] + 10 + 'px'; 
+        lowFretDiv.style.top = '75%'; 
+        lowFretDiv.style.left = '18%'; 
+        lowFretDiv.style.transform = 'translate(-50%, -50%)'; // CSSにも追加済みだが、JSでも明示しておく
         
         containerElement.appendChild(lowFretDiv);
         console.log(`[DRAW] ローフレット表示: ${lowFretValue} @ (${lowFretDiv.style.left}, ${lowFretDiv.style.top})`);
     }
 
-    // 各弦にドット、ミュート、開放弦インジケーター描画 (絶対座標で位相を確定)
+    // 各弦にドット、ミュート、開放弦インジケーター描画 
     chordInfo.fretPositions.forEach((fret, i) => {
         const stringIndex = (chordInfo.fretPositions.length - 1) - i; // 6弦(i=0) -> index=5, 1弦(i=5) -> index=0
 
         const element = document.createElement('div');
         element.style.position = 'absolute';
-        element.style.top = stringTops[stringIndex] + 'px'; // Y座標をピクセルで設定
+        
+        // ★★★ 修正箇所: Y座標をパーセントに切り替え ★★★
+        element.style.top = stringTopsPercent[stringIndex] + '%'; // Y座標をパーセントで設定
 
         let displayFret = fret;
         if (lowFretValue > 2) {
             displayFret = fret - (lowFretValue - 1);
         }
         
-        let logMessage = `[DOT] 弦${6-i} (RawFret: ${fret}, DisplayFret: ${displayFret}, Y-Top: ${stringTops[stringIndex]}px)`;
+        let logMessage = `[DOT] 弦${6-i} (RawFret: ${fret}, DisplayFret: ${displayFret}, Y-Top: ${element.style.top})`;
 
         if (fret === -1) { // ミュート弦
             element.className = 'mute-mark'; 
             element.innerText = '×';
-            element.style.left = fretLefts[0] + 'px';
+            // ★★★ 修正箇所: X座標をパーセントに切り替え ★★★
+            element.style.left = fretLeftsPercent[0] + '%';
             logMessage += ` -> MUTE (X-Left: ${element.style.left})`;
         } else if (fret === 0) { // 開放弦
             element.className = 'open-mark'; 
             element.innerText = '●'; 
-            element.style.left = fretLefts[0] + 'px';
+            // ★★★ 修正箇所: X座標をパーセントに切り替え ★★★
+            element.style.left = fretLeftsPercent[0] + '%';
             logMessage += ` -> OPEN (X-Left: ${element.style.left})`;
         } else if (fret > 0) { // 押弦フレット
             element.className = 'dot';
             
             // ドット位置配置
-            if (displayFret >= 1 && displayFret < fretLefts.length) {
-                element.style.left = fretLefts[displayFret] + 'px';
+            if (displayFret >= 1 && displayFret < fretLeftsPercent.length) {
+                // ★★★ 修正箇所: X座標をパーセントに切り替え ★★★
+                element.style.left = fretLeftsPercent[displayFret] + '%';
                 logMessage += ` -> DOT (Fret ${displayFret}, X-Left: ${element.style.left})`;
             } else if (displayFret === 0) {
-                 element.style.left = fretLefts[0] + 'px';
+                 // ★★★ 修正箇所: X座標をパーセントに切り替え ★★★
+                 element.style.left = fretLeftsPercent[0] + '%';
                  logMessage += ` -> DOT-ERROR-FRET0 (X-Left: ${element.style.left})`; 
             } else {
                 console.warn(`[DOT] 描画スキップ: 弦${6-i}のDisplayFret値が範囲外 (${displayFret})`);
