@@ -34,15 +34,17 @@ body {
 
 h1 {
     color: #0056b3;
-    margin-top: 0px; /* 削減 */
+    margin-top: 0px; 
     margin-bottom: 0px; 
     font-size: 2em;
 }
 h2 {
     color: #0056b3;
     margin-bottom: 0px;
-    margin-top: 0px; /* 追加 */
+    margin-top: 0px; 
     font-size: 1.5em;
+    /* h2の行の高さを詰める */
+    line-height: 1.2; 
 }
 
 button {
@@ -68,7 +70,7 @@ select {
 }
 
 form {
-    margin-bottom: 5px; /* 削減 */
+    margin-bottom: 5px; 
     padding: 10px;
     background-color: #fff;
     border-radius: 8px;
@@ -84,8 +86,8 @@ form {
     justify-content: center;
     gap: 30px;
     margin-top: 0px;
-    margin-bottom: 0px; /* 削減 */
-    width: 550px; /* PCでの表示幅を固定して安定化 */
+    margin-bottom: 0px; 
+    width: 550px; 
 }
 
 .fretboard-column {
@@ -109,7 +111,7 @@ form {
     background-color: #fff;
     box-sizing: border-box; 
     border: 1px solid #ccc;
-    margin: 5px auto 5px; /* 上下マージンを削減 */
+    margin: 2px auto 2px; /* ★★★ マージンをさらに2pxに削減！ ★★★ */
 }
 
 .string {
@@ -144,13 +146,12 @@ form {
 }
 
 .open-mark {
-    background-color: #FFD700; /* 黄色 */
-    border: 2px solid black;  /* 枠線は残す */
-    font-size: 0; /* Oマークを非表示 */
+    background-color: #FFD700; 
+    border: 2px solid black;  
+    font-size: 0; 
 }
 
 .mute-mark {
-    /* ★★★ イッチの要望通り、31pxを維持！枠線なし！ ★★★ */
     background-color: transparent; 
     border: none;                  
     color: black;
@@ -211,21 +212,21 @@ form {
 @media (max-width: 600px) {
 
     body {
-        padding: 10px;
+        padding: 5px; /* ★★★ paddingを10pxから5pxに削減！ ★★★ */
     }
     
     .fretboard-wrapper {
         flex-direction: column;
-        gap: 10px; /* 削減 */
+        gap: 0px; /* ★★★ gapをさらに0pxに削減！ ★★★ */
         padding: 0;
         width: 100%; 
     }
 
     .fretboard-column {
-        width: 90%; 
+        width: 95%; /* ★★★ 幅を少し増やして見た目を改善 ★★★ */
         max-width: 300px; 
-        margin: 5px auto; /* 上下マージンを削減 */
-        padding: 5px; 
+        margin: 2px auto; /* ★★★ 上下マージンを2pxに削減！ ★★★ */
+        padding: 2px; /* ★★★ paddingを削減！ ★★★ */
     }
     
     .controls {
@@ -239,16 +240,18 @@ form {
     #prev-chord-button, #next-chord-button, #random-progression-button {
         width: 50%;
         margin-bottom: 0px;
-        padding: 12px;
+        padding: 10px; /* ボタンのpaddingを少し削減 */
     }
 
     .progress-bar-container {
         width: 90%;
-        margin-bottom: 10px; /* 削減 */
+        margin-bottom: 5px; /* ★★★ マージンを5pxに削減！ ★★★ */
     }
 
     #current-chord-displayname, #next-chord-displayname {
-        font-size: 2em;
+        font-size: 1.8em; /* ★★★ フォントサイズを小さくする！ ★★★ */
+        margin-bottom: 0px;
+        line-height: 1.1;
     }
 }
     </style>
@@ -260,6 +263,7 @@ form {
         <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
             データの読み込みに失敗しました。
         </div>
+
         <div class="controls">
             <form id="progressionForm">
                 <div>
