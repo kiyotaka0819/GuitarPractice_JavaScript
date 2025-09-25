@@ -34,13 +34,14 @@ body {
 
 h1 {
     color: #0056b3;
-    margin-top: 5px; /* 削減 */
-    margin-bottom: 0px; /* 削減 */
+    margin-top: 0px; /* 削減 */
+    margin-bottom: 0px; 
     font-size: 2em;
 }
 h2 {
     color: #0056b3;
     margin-bottom: 0px;
+    margin-top: 0px; /* 追加 */
     font-size: 1.5em;
 }
 
@@ -67,7 +68,7 @@ select {
 }
 
 form {
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* 削減 */
     padding: 10px;
     background-color: #fff;
     border-radius: 8px;
@@ -101,14 +102,14 @@ form {
     /* レスポンシブアスペクト比固定 */
     padding-top: 91.66%; /* 220px/240px の比率で高さを固定 */
     width: 100%; 
-    height: 0; /* padding-topで高さを制御 (固定のheightは削除) */
+    height: 0; 
     
     background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
     box-sizing: border-box; 
     border: 1px solid #ccc;
-    margin: 5px auto 5px; /* 下マージンを5pxに削減 */
+    margin: 5px auto 5px; /* 上下マージンを削減 */
 }
 
 .string {
@@ -149,15 +150,15 @@ form {
 }
 
 .mute-mark {
-    /* ★★★ 修正: Xマークの大きさを調整し、枠線を無くして視認性UP ★★★ */
-    background-color: transparent; /* 背景を透明に */
-    border: none;                  /* 枠線をなくす */
+    /* ★★★ イッチの要望通り、31pxを維持！枠線なし！ ★★★ */
+    background-color: transparent; 
+    border: none;                  
     color: black;
-    font-size: 31px;               /* Xを少し小さくして収まり良く */
-    font-weight: bold;             /* Xを太くする */
-    line-height: 1.0;              /* Xを中央付近に寄せる */
-    width: auto;                   /* 横幅をテキストに合わせる */
-    height: auto;                  /* 高さをテキストに合わせる */
+    font-size: 31px;               
+    font-weight: bold;             
+    line-height: 0.9;              
+    width: auto;                   
+    height: auto;                  
 }
 
 .fret-label {
@@ -223,7 +224,7 @@ form {
     .fretboard-column {
         width: 90%; 
         max-width: 300px; 
-        margin: 0 auto;
+        margin: 5px auto; /* 上下マージンを削減 */
         padding: 5px; 
     }
     

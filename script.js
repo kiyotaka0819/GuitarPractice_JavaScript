@@ -3,7 +3,7 @@ const startProgressionButton = document.getElementById('start-progression-button
 const nextChordButton = document.getElementById('next-chord-button');
 const prevChordButton = document.getElementById('prev-chord-button');
 const randomProgressionButton = document.getElementById('random-progression-button');
-const currentProgressionNameDisplay = document.getElementById('current-progression-name'); // 削除したが、ロジックは残しておく
+const currentProgressionNameDisplay = document.getElementById('current-progression-name'); 
 const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container');
@@ -15,13 +15,11 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
-// ★★★ 最終調整: あんたの理想値に合わせて修正済み ★★★
-
 // X軸（left）に使うべき定数：フレットの位置 (1F→6F)
-// あんたのデータ: 1F=23%, 2F=43%, 3F=65% を基に調整
 const FRET_POSITIONS = [23, 43, 65, 78, 88, 95]; 
 
-// E6: 70.5%, A: 63.5%, D: 56.5%, G: 49%, B: 41%, E1: 34.5% の順に定義
+// Y軸（top）に使うべき定数：弦の位置 (E6→E1)
+// E6: 70.5% (下), A: 63.5%, D: 56.5%, G: 49%, B: 41%, E1: 34.5% (上)
 const Y_AXIS_STRING_POSITIONS = [70.5, 63.5, 56.5, 49, 41, 34.5];
 
 
@@ -86,7 +84,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (縦横軸の完全入れ替え修正)
+// フレットボード描画 (Y軸座標の修正済み)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -112,21 +110,17 @@ function drawFretboard(containerId, chord) {
     }
     
     // ドット、開放弦、ミュートの描画
-    const REVERSED_STRING_POSITIONS_FOR_TOP = [...Y_AXIS_STRING_POSITIONS].reverse();
 
     // 配列: [E6, A, D, G, B, E1]
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // ★★★ Y軸（top）に、弦の位置（Y_AXIS_STRING_POSITIONS）を使う（X/Y反転）★★★
-        // E6がtop: 70.5% (下)、E1がtop: 34.5% (上) になるように、配列を逆順に参照
-        dot.style.top = `${REVERSED_STRING_POSITIONS_FOR_TOP[stringIndex]}%`;
+        // ★★★ 修正箇所: 逆順にせずに、Y_AXIS_STRING_POSITIONSを直接使う！ ★★★
+        dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            
-            // X軸（left）は、開放弦なので、一番左に固定（4%）。
             dot.style.left = '4%'; 
             container.appendChild(dot);
             
@@ -134,18 +128,13 @@ function drawFretboard(containerId, chord) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = '×';
-            
-            // X軸（left）は、ミュートなので、一番左に固定（4%）。
             dot.style.left = '4%';
             container.appendChild(dot);
 
         } else if (fret >= 1 && fret <= 6) { 
             // 押弦 (1Fから6F)
             dot.className = 'dot';
-            
-            // ★★★ X軸（left）は、フレットの位置（FRET_POSITIONS）を使う。 ★★★
             dot.style.left = `${FRET_POSITIONS[fret - 1]}%`;
-            
             container.appendChild(dot);
         }
     });
