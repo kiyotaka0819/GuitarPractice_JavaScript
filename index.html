@@ -137,20 +137,28 @@ form {
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
-    border: 2px solid black;
+    /* border: 2px solid black; <--- 元はこれがあった */
     text-align: center;
     font-size: 10px; 
     line-height: 1.5; 
 }
 
 .open-mark {
-    background-color: #FFD700;
+    background-color: #FFD700; /* 黄色 */
+    border: 2px solid black;  /* 枠線は残す */
     font-size: 0; /* Oマークを非表示 */
 }
 
 .mute-mark {
-    background-color: transparent;
+    /* ★★★ ここを修正するで！ ★★★ */
+    background-color: transparent; /* 背景を透明に */
+    border: none;                  /* 枠線をなくす */
     color: black;
+    font-size: 18px;               /* Xを大きくする */
+    font-weight: bold;             /* Xを太くする */
+    line-height: 0.9;              /* Xを上の方に寄せる */
+    width: auto;                   /* 横幅をテキストに合わせる */
+    height: auto;                  /* 高さをテキストに合わせる */
 }
 
 .fret-label {
