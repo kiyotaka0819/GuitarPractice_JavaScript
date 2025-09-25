@@ -193,23 +193,17 @@ form {
     <h1>ギター練習アプリ</h1>
 
     <div class="controls">
-        <%-- コード進行選択フォーム --%>
         <form id="progressionForm">
             <div>
                 <label for="progressionSelect">コード進行:</label>
-                <%-- コード進行プルダウン (JSでオプション追加) --%>
                 <select name="progressionName" id="progressionSelect">
                     </select>
-                <%-- 進行開始ボタン --%>
                 <button type="submit">この進行で開始</button>
-                <%-- ランダム進行生成ボタン --%>
                 <button type="button" id="randomProgressionButton">ランダム進行を生成</button>
             </div>
             
-            <%-- 自動更新設定 --%>
             <div class="auto-update-controls">
                 <label for="autoUpdateTime">自動更新:</label>
-                <%-- 自動更新間隔プルダウン --%>
                 <select id="autoUpdateTime">
                     <option value="1000">1秒</option>
                     <option value="2000">2秒</option>
@@ -217,49 +211,39 @@ form {
                     <option value="4000">4秒</option>
                     <option value="5000">5秒</option>
                 </select>
-                <%-- 自動更新開始/停止ボタン --%>
                 <button id="toggleAutoUpdate" type="button">再生</button>
             </div>
         </form>
+        
+        <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
     </div>
 
-    <%-- 現在/次のコード表示エリア --%>
     <div class="fretboard-wrapper">
-        <%-- 現在のコード列 --%>
         <div class="fretboard-column">
             <div class="fretboard-label">現在のコード</div>
-            <%-- 現在のコード名 --%>
             <h2 id="currentChordDisplayName"></h2>
-            <%-- 現在のコードフレットボード --%>
             <div id="fretboard-container">
             </div>
             <div class="button-container">
-                <%-- 前のコードボタン --%>
                 <button id="prevChordButton">前のコード</button>
             </div>
         </div>
 
-        <%-- 次のコード列 --%> 
         <div class="fretboard-column">
             <div class="fretboard-label">次のコード</div>
-            <%-- 次のコード名 --%>
             <h2 id="nextChordDisplayName"></h2>
-            <%-- 次のコードフレットボード --%>
             <div id="next-fretboard-container">
             </div>
             <div class="button-container">
-                <%-- 次のコードボタン --%>
                 <button id="nextChordButton">次のコード</button>
             </div>
         </div>
     </div>
 
-    <%-- コード進行プログレスバー --%>
     <div class="progress-bar-container">
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <%-- JavaScriptをロード --%>
     <script src="script.js"></script>
 </body>
 </html>
