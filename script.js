@@ -16,12 +16,11 @@ let isAutoUpdating = false;
 
 // フレットボードの描画パラメータ
 
-// ★★★ 最終修正: FRET_POSITIONS (押弦ドットの縦位置) の最適値 ★★★
-// 1F, 2F, 3F... の中央にドットを配置するためのパーセンテージ。
+// 縦軸（Y軸）に使うべき定数：フレットの位置 (1F→6F)
 const FRET_POSITIONS = [15, 30, 45, 60, 75, 88]; 
 
-// 弦の位置 (横方向) - E6からE1までの水平位置
-const STRING_POSITIONS = [4.5, 20.5, 36.5, 52.5, 68.5, 84.5]; 
+// 横軸（X軸）に使うべき定数：弦の位置 (E6→E1)
+const STRING_POSITIONS = [5.5, 21.5, 37.5, 53.5, 69.5, 85.5]; 
 
 // =========================================================================
 // テスト用ダミーデータ (変更なし)
@@ -84,7 +83,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (座標ロジック修正済み)
+// フレットボード描画 (縦横軸の入れ替え修正済)
 // =========================================================================
 
 function drawFretboard(containerId, chord) {
@@ -109,16 +108,17 @@ function drawFretboard(containerId, chord) {
     }
     
     // ドット、開放弦、ミュートの描画
+    // 配列: [E6, A, D, G, B, E1]
+    // stringIndex: 0 (E6) -> X軸(左端), fret: (1, 2, 3...) -> Y軸(下へ)
     chord.dots.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // 横位置（弦の位置）を設定
+        // dot.style.left (X軸) は弦の位置 (STRING_POSITIONS) を使う
         dot.style.left = `${STRING_POSITIONS[stringIndex]}%`;
 
         if (fret === 0) {
             // 開放弦 (ネック部分)
             dot.className = 'open-mark';
-            // 開放弦マークは指板の画像の一番上(ネック部分)に配置
             dot.style.top = '0%'; 
             container.appendChild(dot);
             
@@ -126,7 +126,6 @@ function drawFretboard(containerId, chord) {
             // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = 'X';
-            // ミュートマークは指板の画像の一番上(ネック部分)に配置
             dot.style.top = '0%';
             container.appendChild(dot);
 
@@ -134,7 +133,7 @@ function drawFretboard(containerId, chord) {
             // 押弦 (1Fから6F)
             dot.className = 'dot';
 
-            // FRET_POSITIONS (フレットの中心) を参照
+            // dot.style.top (Y軸) はフレットの位置 (FRET_POSITIONS) を使う
             dot.style.top = `${FRET_POSITIONS[fret - 1]}%`;
             container.appendChild(dot);
         }
