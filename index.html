@@ -80,7 +80,6 @@ form {
     gap: 30px;
     margin-top: 0px;
     margin-bottom: 5px;
-    /* ★★★ 修正: 全体の最大幅を設定し、PCでウィンドウを縮めても安定させる ★★★ */
     max-width: 550px; 
 }
 
@@ -88,19 +87,19 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* ★★★ 修正: PCサイズ時は固定幅240pxに設定し、サイズ変動を抑える ★★★ */
+    /* PCサイズ時は固定幅240pxに設定し、サイズ変動を抑える */
     width: 240px; 
 }
 
-/* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (ズレ対策) ★★★ */
+/* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (PCでの完全固定) ★★★ */
 #fretboard-container, #next-fretboard-container {
     position: relative;
-    /* width/heightの固定ピクセル値は引き続き削除 */
     
-    /* アスペクト比固定: 220px (高さ) / 240px (幅) * 100% ≈ 91.66% */
-    padding-top: 91.66%; 
-    width: 100%; 
-    height: 0; 
+    /* PCでは元の画像サイズ(240x220px)に完全固定 */
+    width: 240px; 
+    height: 220px; 
+    
+    /* padding-top, height: 0 は削除 */
     
     background-size: contain;
     background-repeat: no-repeat;
@@ -216,17 +215,22 @@ form {
         flex-direction: column;
         gap: 20px;
         padding: 0;
-        /* ★★★ 修正: モバイル時は最大幅を解除/調整 ★★★ */
         max-width: none; 
     }
 
     .fretboard-column {
-        /* モバイル表示時は幅を90%にする */
         width: 90%; 
-        /* ★★★ 追加: 画像の過剰な拡大・縮小を防ぐための最大幅 ★★★ */
         max-width: 300px; 
         margin: 0 auto;
         padding: 10px;
+    }
+
+    /* ★★★ 修正箇所: #fretboard-container と #next-fretboard-container (モバイルでの固定) ★★★ */
+    #fretboard-container, #next-fretboard-container {
+        /* 幅は親要素に合わせる */
+        width: 100%; 
+        /* 高さを幅に対する比率で計算して固定。これなら幅が動いても高さは連動する */
+        height: calc(100% * 0.9166); 
     }
 
     .controls {
