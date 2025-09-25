@@ -160,7 +160,7 @@ function initializeProgression(progressionName) {
     currentProgressionName = progressionName;
     currentChordIndex = 0;
     
-    // 表示を更新 (DOM要素の存在は既にチェック済みだが、念のため)
+    // 表示を更新 
     if (currentProgressionNameElement) {
         currentProgressionNameElement.innerText = progressionName; 
     }
@@ -201,7 +201,6 @@ function updateDisplay() {
         nextChordDisplayNameElement.innerText = nextChordInfo.displayName;
         drawFretboardDots(nextChordInfo, nextFretboardContainer);
     } else if (nextChordDisplayNameElement) {
-        // 次のコード名があるが、CHORD_DATA_MAPにデータがない場合
         nextChordDisplayNameElement.innerText = nextChordName + " (データなし)"; 
         drawEmptyFretboard(nextFretboardContainer);
     }
@@ -242,11 +241,12 @@ function drawFretboardDots(chordInfo, container) {
         const stringElement = document.createElement('div');
         stringElement.className = `string string-${i}`;
         
-        // ★★★ 修正：強制的な横位置計算を全て削除し、CSSに任せる ★★★
+        // ★★★ 修正：重なり防止のため、横位置だけJSで設定し直す ★★★
         stringElement.style.position = 'absolute';
-        stringElement.style.width = '100%'; 
+        stringElement.style.width = '16%'; // ドットを内包できる程度の幅
         stringElement.style.height = '100%';
         stringElement.style.top = '0';
+        stringElement.style.left = `${5 + i * 16}%`; // 5%から始めて16%ずつ広げる (横に並べるために必須)
         // ★★★ 修正ここまで ★★★
         
         if (stringPos === -1) {
@@ -273,8 +273,7 @@ function drawFretboardDots(chordInfo, container) {
                 fretNumber = stringPos - lowFret + 1; // バンドフレットからの相対位置
             }
             
-            // ★★★ 修正：強制的な縦位置計算とdata-fretの追加を全て削除 ★★★
-            // 位置とサイズは全てCSSファイルに任せる
+            // ★★★ 修正：縦位置はCSSに任せるため、何も設定しない ★★★
             // dot.style.top = '...' や dot.setAttribute('data-fret', ...) は全て削除
             // ★★★ 修正ここまで ★★★
             
