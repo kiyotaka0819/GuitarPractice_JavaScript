@@ -1,4 +1,4 @@
-
+// ★★★ 必須: GASのURLは不要なので、空か削除してください ★★★
 const GAS_API_URL = ''; 
 
 // コード情報と進行情報（静的環境でJS内に保持するダミーデータ）
@@ -22,19 +22,21 @@ let currentChordIndex = 0;
 let totalProgressionLength = CHORD_PROGRESSIONS_MAP[currentProgressionName].length; 
 let autoUpdateIntervalId = null; 
 
-// DOM要素の取得 (変更なし)
+// DOM要素の取得
 const fretboardContainer = document.getElementById('fretboard-container');
 const nextFretboardContainer = document.getElementById('next-fretboard-container');
-const currentChordDisplayNameElement = document.getElementById('currentChordDisplayName'); 
-const nextChordDisplayNameElement = document.getElementById('nextChordDisplayName'); 
-const progressionSelect = document.getElementById('progressionSelect'); 
-const progressBar = document.getElementById('progressBar'); 
-const prevChordButton = document.getElementById('prevChordButton'); 
-const nextChordButton = document.getElementById('nextChordButton'); 
-const randomProgressionButton = document.getElementById('randomProgressionButton'); 
-const toggleAutoUpdateButton = document.getElementById('toggleAutoUpdate'); 
-const autoUpdateTimeSelect = document.getElementById('autoUpdateTime'); 
+const currentChordDisplayNameElement = document.getElementById('current-chord-displayname'); // ID修正
+const nextChordDisplayNameElement = document.getElementById('next-chord-displayname');     // ID修正
+const progressionSelect = document.getElementById('progression-select');                 // ID修正
+const progressBar = document.getElementById('progress-bar');                             // ID修正
+const prevChordButton = document.getElementById('prev-chord-button');                    // ID修正
+const nextChordButton = document.getElementById('next-chord-button');                    // ID修正
+const randomProgressionButton = document.getElementById('random-progression-button');    // ID修正
+const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');            // ID修正
+const autoUpdateTimeSelect = document.getElementById('auto-update-time');                // ID修正
 const errorContainer = document.getElementById('error-container'); 
+const startProgressionButton = document.getElementById('start-progression-button');      // ★★★ 新規追加 ★★★
+
 
 // ★★★ 復元された絶対座標定数（正しい位相を決定するピクセル値）★★★ (変更なし)
 const stringTops = [75, 92, 109, 126, 143, 158];
@@ -352,8 +354,18 @@ function setupEventListeners() {
         });
     }
     
-    // コード進行選択ボタンのイベントをJSで乗っ取る
-    const progressionForm = document.querySelector('form[action$="/chordChange"]');
+    // ★★★ 新規追加: 'この進行で開始'ボタンのイベントリスナー設定 (initializeProgressionの代替) ★★★
+    if (startProgressionButton) {
+        startProgressionButton.addEventListener('click', function() {
+            stopAutoUpdate();
+            const selectedProgression = progressionSelect.value;
+            navigateProgression('init', selectedProgression); 
+        });
+    }
+
+    // コード進行選択フォームのイベントをJSで乗っ取る
+    // HTMLで<form id="progressionForm">としているため、submitイベントをハンドル（ただしボタンのIDイベントで代用可能）
+    const progressionForm = document.getElementById('progressionForm');
     if (progressionForm) {
         progressionForm.addEventListener('submit', function(e) {
             e.preventDefault(); // フォームの送信をキャンセル

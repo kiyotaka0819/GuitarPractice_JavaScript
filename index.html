@@ -5,260 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>ギター練習アプリ (GitHub Pages版)</title>
     <style>
-    /* --- CSS（見た目）ここから --- */
-    
-    * {
-        box-sizing: border-box; 
-    }
-    body {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        color: #333;
-        text-align: center;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        box-sizing: border-box;
-        overflow-y: auto;
-    }
+/* --- CSS（見た目）ここから (コメント削除済み) --- */
 
-    /* 見出し */
-    h1 {
-        color: #0056b3;
-        margin-top: 10px;
-        margin-bottom: 5px;
-        font-size: 2em;
-    }
-    h2 {
-        color: #0056b3;
-        margin-bottom: 0px;
-        font-size: 1.5em;
-    }
+* {
+    box-sizing: border-box;
+}
+body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
 
-    /* ボタン共通 */
-    button {
-        padding: 8px 12px;
-        font-size: 15px;
-        cursor: pointer;
-        border: none;
-        border-radius: 5px;
-        background-color: #007bff;
-        color: white;
-        margin: 3px;
-    }
-    button:hover {
-        background-color: #0056b3;
-    }
+h1 {
+    color: #0056b3;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 2em;
+}
+h2 {
+    color: #0056b3;
+    margin-bottom: 0px;
+    font-size: 1.5em;
+}
 
-    /* プルダウン */
-    select {
-        padding: 6px;
-        font-size: 15px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        margin: 3px;
-    }
+button {
+    padding: 8px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    margin: 3px;
+}
+button:hover {
+    background-color: #0056b3;
+}
 
-    /* フォームコンテナ */
-    form {
-        margin-bottom: 10px;
-        padding: 10px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
+select {
+    padding: 6px;
+    font-size: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin: 3px;
+}
 
-    /* フレットボード横並びラッパー */
-    .fretboard-wrapper {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        margin-top: 0px;
-        margin-bottom: 5px;
-    }
+form {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
 
-    /* フレットボード列 */
-    .fretboard-column {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
+.fretboard-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
 
-    /* フレットボード画像表示エリア */
-    #fretboard-container, #next-fretboard-container {
-        position: relative;
-        width: 240px;
-        height: 220px;
-        background-size: contain;
-        background-repeat: no-repeat;
-        /* 画像がない場合に備えて薄い背景色を設定 */
-        background-color: #fff; 
-        border: 1px solid #ccc;
-        margin: 5px auto;
-        /* 画像が読み込まれない場合のために、ここで画像を強制設定 */
-        background-image: url("fretboard.jpg"); 
-    }
-    
-    /* 押弦ドットの親要素 */
-    .string {
-        position: absolute;
-        height: 100%;
-        /* 6本の弦の横位置を調整 (drawFretboardDotsでleftを設定するためCSSでは省略) */
-    }
+.fretboard-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    /* 押弦ドット */
-    .dot{
-        position: absolute;
-        width: 14px;
-        height: 14px;
-        background-color: #FF4500;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        border: 2px solid black;
-        z-index: 2;
-        /* ドットの位置はJSで直接設定する */
-    }
-        
-    /* ミュート記号 (X) */
-    .mute-mark{ 
-        position: absolute;
-        font-weight: 900;
-        font-size: 22px;
-        color: yellow;
-        text-shadow: 1.5px 0 black, -1.5px 0 black, 0 1.5px black, 0 -1.5px black;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-    }
-        
-    /* 開放弦記号 (〇) */
-    .open-mark{ 
-        position: absolute;
-        font-family: 'Noto Sans', sans-serif;
-        font-weight: 900;
-        font-size: 12px;
-        color: yellow;
-        -webkit-text-stroke: 2px black;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-    }
+#fretboard-container, #next-fretboard-container {
+    position: relative;
+    width: 240px;
+    height: 220px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    margin: 5px auto;
+    background-image: url("fretboard.jpg");
+}
 
-    /* ローフレット（基準フレット）表示 */
-    .fret-label { 
-        position: absolute;
-        font-size: 18px;
-        font-weight: bold;
-        color: black;
-        padding: 2px 4px;
-        z-index: 3;
-    }
+.string {
+    position: absolute;
+    height: 100%;
+}
 
-    /* コード名表示 */
-    #current-chord-displayname, #next-chord-displayname { 
-        font-size: 3em;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 0px;
-        margin-top: 0px;
-        line-height: 1.2;
-        min-height: 1.2em;
-    }
+.dot{
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: #FF4500;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid black;
+    z-index: 2;
+}
 
-    /* プログレスバー */
-    .progress-bar-container {
-        width: 80%;
-        max-width: 500px;
-        background-color: #e0e0e0;
-        border-radius: 5px;
-        margin: 5px auto;
-        height: 20px;
-        overflow: hidden;
-    }
-    .progress-bar {
-        height: 100%;
-        width: 0%;
-        background-color: #4CAF50;
-        text-align: center;
-        color: white;
-        line-height: 20px;
-        border-radius: 5px;
-        transition: width 0.5s ease-in-out;
-    }
+.mute-mark{
+    position: absolute;
+    font-weight: 900;
+    font-size: 22px;
+    color: yellow;
+    text-shadow: 1.5px 0 black, -1.5px 0 black, 0 1.5px black, 0 -1.5px black;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
 
-    /* その他細かい要素の配置 */
-    .controls, .button-container, .auto-update-controls {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin: 5px 0;
-    }
+.open-mark{
+    position: absolute;
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    color: yellow;
+    -webkit-text-stroke: 2px black;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
 
-    /* ======================================================= */
-    /* レスポンシブ対応 (スマホ向け) */
-    /* ======================================================= */
-    @media (max-width: 600px) {
-        
-        body {
-            padding: 10px;
-        }
+.fret-label {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    color: black;
+    padding: 2px 4px;
+    z-index: 3;
+}
 
-        .container {
-            width: 100%;
-            padding: 10px;
-        }
+#current-chord-displayname, #next-chord-displayname {
+    font-size: 3em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    line-height: 1.2;
+    min-height: 1.2em;
+}
 
-        .fretboard-wrapper {
-            flex-direction: column; 
-            gap: 20px;
-            padding: 0;
-        }
+.progress-bar-container {
+    width: 80%;
+    max-width: 500px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 5px auto;
+    height: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: #4CAF50;
+    text-align: center;
+    color: white;
+    line-height: 20px;
+    border-radius: 5px;
+    transition: width 0.5s ease-in-out;
+}
 
-        .fretboard-column {
-            width: 90%; 
-            margin: 0 auto;
-            padding: 10px;
-        }
+.controls, .button-container, .auto-update-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
 
-        #fretboard-container, #next-fretboard-container {
-            width: 100%;
-            height: 250px; 
-        }
+@media (max-width: 600px) {
 
-        .controls {
-            flex-direction: column;
-        }
-        
-        .button-container {
-            width: 100%;
-        }
+    body {
+        padding: 10px;
+    }
 
-        #prev-chord-button, #next-chord-button, #random-progression-button {
-            width: 50%; 
-            margin-bottom: 0px;
-            padding: 12px; 
-        }
-        
-        .progress-bar-container {
-            width: 90%;
-            margin-bottom: 20px;
-        }
-        
-        #current-chord-displayname, #next-chord-displayname {
-            font-size: 2.5em;
-        }
-    }
+    .container {
+        width: 100%;
+        padding: 10px;
+    }
 
-    /* --- CSS（見た目）ここまで --- */
+    .fretboard-wrapper {
+        flex-direction: column;
+        gap: 20px;
+        padding: 0;
+    }
+
+    .fretboard-column {
+        width: 90%;
+        margin: 0 auto;
+        padding: 10px;
+    }
+
+    #fretboard-container, #next-fretboard-container {
+        width: 100%;
+        height: 250px;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+
+    .button-container {
+        width: 100%;
+    }
+
+    #prev-chord-button, #next-chord-button, #random-progression-button {
+        width: 50%;
+        margin-bottom: 0px;
+        padding: 12px;
+    }
+
+    .progress-bar-container {
+        width: 90%;
+        margin-bottom: 20px;
+    }
+
+    #current-chord-displayname, #next-chord-displayname {
+        font-size: 2.5em;
+    }
+}
+/* --- CSS（見た目）ここまで --- */
     </style>
 </head>
 <body>
