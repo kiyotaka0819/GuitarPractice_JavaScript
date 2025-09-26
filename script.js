@@ -159,24 +159,21 @@ function drawFretboard(containerId, chordName) {
         const dot = document.createElement('div');
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
-        let displayFret = fret; // まずはそのまま
+        let displayFret = fret; // 実フレット値で初期化
 
         if (fret > 0) {
-            // ★★★ 押弦フレットの場合の計算ロジックを修正！ ★★★
-            // lowFretが押さえているフレットと一致する場合、描画上の1フレット目になるよう +1 する
-            displayFret = fret - lowFret + 1; 
-            // 例: Bm (lowFret=2) の6弦(fret=2) -> displayFret = 1 (描画上の1フレット目)
-            
-        } else if (fret === 0) {
-            // 開放弦(0)の場合: 0のまま
-            displayFret = 0;
-            
-        } else if (fret === -1) {
-            // ミュート(-1)の場合: -1のまま
-            displayFret = -1;
-        }
-
-        // lowFret >= 2 の時の描画オフセットは一旦解除 (上のロジックで対応できてるはず)
+            // ★★★ 修正箇所：lowFret > 1 のときのみ相対計算を行う！ ★★★
+            if (lowFret > 1) {
+                // lowFretが2以上（バレーコードなど）の場合
+                // 相対位置と描画上の+1オフセットを適用
+                displayFret = fret - lowFret + 1; 
+            } else {
+                // lowFretが1（通常の開放弦コード）の場合
+                // 実フレット値（fret）をそのまま使う
+                displayFret = fret;
+            }
+        } 
+        // fret=0 (開放弦) と fret=-1 (ミュート) の場合はそのまま
 
         if (displayFret === 0) {
             dot.className = 'open-mark';
