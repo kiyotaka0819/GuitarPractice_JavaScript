@@ -1,4 +1,4 @@
-// script.js の全文 (修正が必要なのは fetchDataFromGAS 関数内だけや！)
+// script.js の全文 (データ取得ロジックをPOSTに変更した最終修正版)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -20,7 +20,7 @@ let isAutoUpdating = false;
 // GAS接続設定 (ここが重要！)
 // =========================================================================
 
-// ★★★ リダイレクト回避の裏技URL (IDは変更なしでOK) ★★★
+// ★★★ リダイレクト回避の裏技URL (あなたのIDに contentuser が入る！) ★★★
 const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec'; 
 
 const CACHE_KEY = 'chordAppCache';
@@ -49,16 +49,15 @@ async function fetchDataFromGAS() {
     console.log("❌ キャッシュ期限切れ、または初回アクセス。GASからデータを取得します...");
     try {
         const response = await fetch(GAS_URL, {
-            // ★★★ データを取得したいけど、CORS回避のためにPOSTを使う！ ★★★
+            // ★★★ GETリクエストではなく、CORS回避のために method: 'POST' にする！ ★★★
             method: 'POST', 
             // Content-Typeを text/plain にしてCORSプリフライトを回避
             headers: { 'Content-Type': 'text/plain' },
-            // bodyは空にする (GAS側で空ならデータ取得ロジックが走る)
+            // bodyを空にすることで、GAS側（doPost）で「データ取得」と判断させる
             body: '' 
         });
 
         if (!response.ok) {
-            // ContentServiceに戻したので、CORSエラーは発生しにくいはず。
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
