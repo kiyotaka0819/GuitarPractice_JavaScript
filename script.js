@@ -333,6 +333,10 @@ function toggleAutoUpdate() {
     }
     isAutoUpdating = !isAutoUpdating;
 }
+
+// =========================================================================
+// ★★★ 修正箇所: ランダム生成のロジックを修正 ★★★
+// =========================================================================
 function generateRandomProgression() {
     const allChordNames = Object.keys(allChords);
     if (allChordNames.length === 0) {
@@ -342,7 +346,9 @@ function generateRandomProgression() {
     const numSteps = 4;
     const randomChordNames = [];
     for (let i = 0; i < numSteps; i++) {
-        const randomChordName = allChordNames[Math.floor(MathordNames.length)];
+        // 修正後の正しいランダム選択ロジック
+        const randomIndex = Math.floor(Math.random() * allChordNames.length);
+        const randomChordName = allChordNames[randomIndex];
         randomChordNames.push(randomChordName);
     }
     const randomProgName = `ランダム (${randomChordNames.join('-')})`;
@@ -351,6 +357,9 @@ function generateRandomProgression() {
     progressionSelect.value = randomProgName;
     startProgression(randomProgName);
 }
+// =========================================================================
+
+
 document.addEventListener('DOMContentLoaded', loadProgressions);
 startProgressionButton.addEventListener('click', () => {
     startProgression(progressionSelect.value);
@@ -388,7 +397,7 @@ toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
 
 
 // =========================================================================
-// ★★★ 新規追加：キャッシュクリア機能のロジック ★★★
+// キャッシュクリア機能のロジック
 // =========================================================================
 
 const clearCacheButton = document.getElementById('clearCacheButton');
