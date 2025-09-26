@@ -33,7 +33,7 @@ const FRET_POSITIONS = [22, 43, 65, 78, 88, 95];
 const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; 
 
 // 開放弦/ミュートのX軸位置 (前の検証で調整した値)
-const OPEN_MUTE_X_POSITION = '21%'; 
+const OPEN_MUTE_X_POSITION = '4%'; 
 
 
 // =========================================================================

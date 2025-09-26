@@ -145,25 +145,22 @@ form {
     line-height: 1.5; 
 }
 
-.open-mark {
-    background-color: #FFD700; 
-    border: 2px solid black;  
-    font-size: 0; 
-}
-
 .mute-mark {
-    /* サイズをパーセント化し、フォントサイズも相対化 (ウィンドウサイズに連動) */
-    background-color: transparent; 
-    border: none;                  
-    color: black;
+    /* (既存のスタイルはそのまま) */
+    position: absolute;
+    /* top, left は JavaScript で設定される */
     
-    width: 8%; /* ドットより少し大きく */
-    height: 8%; /* ドットより少し大きく */
-    
-    font-size: 1.8em; /* 相対サイズに */
-    font-weight: bold;             
-    line-height: 0.8; /* 中央寄せ調整 */
-    transform: translate(-50%, -50%); 
+    /* ★★★ ここから修正/追加 ★★★ */
+    color: red;             /* 色を赤に変更 */
+    font-weight: bold;      /* 文字を太字に */
+    font-size: 1.5em;       /* 少し大きく */
+    line-height: 1;         /* 行の高さを調整して、×が中央に来るように */
+    text-shadow: 0 0 2px black; /* 黒い影をつけて、明るい背景でも見やすく */
+    /* ★★★ ここまで修正/追加 ★★★ */
+}
+.open-mark {
+    /* (既存のスタイルはそのまま) */
+    background-color: lightgreen; /* 例えば、開放弦は薄い緑色など */
 }
 
 .fret-label {
