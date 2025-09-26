@@ -135,7 +135,7 @@ function drawFretboard(containerId, chordName) {
     
     const chordData = allChords[chordName];
     if (!chordData) {
-        container.textContent = 'コードデータなし";
+        container.textContent = 'コードデータなし';
         return;
     }
 
