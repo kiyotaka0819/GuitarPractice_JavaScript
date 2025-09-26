@@ -21,7 +21,7 @@ body {
     min-height: 100vh;
 }
 #container {
-    max-width: 800px; /* 画面を広く使うために最大幅を少し広げた */
+    max-width: 800px; 
     margin: 0 auto;
     background-color: #fff;
     padding: 20px;
@@ -54,12 +54,30 @@ button:hover {
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
-    flex-wrap: wrap; /* ボタンが並ぶように */
+    flex-wrap: wrap; 
 }
 #navigation button, #controls button {
     flex-grow: 1;
     min-width: 150px;
 }
+
+/* ボタンの横並びを修正 */
+#controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3列にする */
+    gap: 5px;
+}
+#progressionTitle {
+    grid-column: 1 / 4; /* タイトルは3列全て使う */
+    width: 100%;
+    text-align: center;
+}
+#prevChordBtn, #nextChordBtn, #modeToggleButton {
+    width: auto; /* gridの子要素なのでwidth:100%を解除 */
+    min-width: 0;
+}
+
+
 /* --- 表示エリア --- */
 #chordDisplay {
     margin: 20px 0;
@@ -76,6 +94,9 @@ button:hover {
     background-color: #fff;
     text-align: center;
     margin-bottom: 10px;
+    /* 詳細モード（2個表示）の時の幅 */
+    width: calc(50% - 10px); 
+    max-width: 300px;
 }
 .fretboard-container h2 {
     margin: 0 0 10px 0;
@@ -87,18 +108,22 @@ button:hover {
     border: 1px solid #000;
     padding: 5px;
     background-color: #f7f7f7;
-    /* 詳細モード（1個表示）の時 */
     width: 200px; 
     height: 300px;
     box-sizing: content-box;
 }
+
 /* --- コンパクトモード (多段表示) のスタイル --- */
+.compact-mode #chordDisplay {
+    justify-content: flex-start; /* 左寄せ */
+}
 .compact-mode .fretboard-container {
-    width: calc(20% - 20px); /* 1行5個表示の目安 */
-    min-width: 120px; /* 最小幅 */
+    width: calc(20% - 10px); /* 1行5個表示の目安 */
+    min-width: 130px; /* 最小幅 */
     margin-bottom: 10px;
     padding: 5px;
-    border: none;
+    border: 1px solid #eee;
+    box-shadow: none;
 }
 .compact-mode .fretboard {
     width: 100px; /* 小さくする */
@@ -109,6 +134,9 @@ button:hover {
 .compact-mode .fretboard-container h2 {
     font-size: 1em;
     margin-bottom: 5px;
+}
+.compact-mode .fretboard-container.current-chord {
+    border: 2px solid #ff6600; /* 現在のコードを目立たせる */
 }
 
 #statusMessage {
@@ -159,6 +187,6 @@ button:hover {
         </div>
     </div>
     
-    <script src="index.js"></script>
+    <script src="script.js"></script> 
 </body>
 </html>
