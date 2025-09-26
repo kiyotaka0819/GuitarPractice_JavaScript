@@ -1,3 +1,5 @@
+// script.js の全文
+
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
 const nextChordButton = document.getElementById('next-chord-button');
@@ -15,25 +17,24 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // =========================================================================
-// ★★★ 最終座標調整エリアとGAS設定 ★★★
+// GAS接続設定 (ここが重要！)
 // =========================================================================
 
-// GAS接続設定
-// ★★★ ここにデプロイしたGASの「テスト実行」URLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbz_9egCx1hsSKI76m4co16QoCsOr7HhaXVeakrGYzLwOO5u4m-9iK8c5WigGtuL1Q0rmg/exec'; 
+// ★★★ Googleusercontent.com に手動で書き換え済み！CORS回避の裏技URLや！ ★★★
+const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyGqOY--jN3pHzbvtJDRd6JLHNiRwBPHkIZA5Q4F_r3uZvIyZcso-iDkPJDYPf5fLotbw/exec'; 
+
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 
-// フレットボードの描画パラメータ
+// フレットボードの描画パラメータ (変更なし)
 const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; 
 const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; 
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
-// GAS接続とデータ整形ロジック (LocalStorage対応追加)
+// GAS接続とデータ整形ロジック (リダイレクト追跡オプション追加)
 // =========================================================================
 
-// GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
     // 1. LocalStorageからキャッシュを確認
     const cachedData = localStorage.getItem(CACHE_KEY);
@@ -47,8 +48,13 @@ async function fetchDataFromGAS() {
     // 2. キャッシュがない、または期限切れの場合、GASからデータを取得する
     console.log("❌ キャッシュ期限切れ、または初回アクセス。GASからデータを取得します...");
     try {
-        const response = await fetch(GAS_URL);
+        const response = await fetch(GAS_URL, {
+             // ★★★ リダイレクトの追跡を明示的に指定して307エラーを回避する！ ★★★
+             redirect: 'follow' 
+        });
+
         if (!response.ok) {
+            // CORSエラーの場合、ここで止まることが多い
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
@@ -77,7 +83,7 @@ async function fetchDataFromGAS() {
     }
 }
 
-// データの読み込みと初期表示
+// データの読み込みと初期表示 (変更なし)
 async function loadProgressions() {
     const data = await fetchDataFromGAS();
     
@@ -88,7 +94,6 @@ async function loadProgressions() {
         populateProgressionSelect();
         errorContainer.style.display = 'none';
 
-        // LocalStorageから一時保存の進行名を取得し、優先的に開始する
         const tempProgressionName = localStorage.getItem('tempProgressionSelection');
         
         if (tempProgressionName && allProgressions[tempProgressionName]) {
@@ -114,14 +119,9 @@ function populateProgressionSelect() {
 
 
 // =========================================================================
-// フレットボード描画
+// フレットボード描画 (変更なし)
 // =========================================================================
 
-/**
- * 取得したコードデータ（GAS形式）を元に描画する
- * @param {string} containerId - 描画先のDOM ID
- * @param {string} chordName - 描画するコード名
- */
 function drawFretboard(containerId, chordName) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -137,45 +137,35 @@ function drawFretboard(containerId, chordName) {
     const lowFret = chordData.lowFret;
     const fretPositions = chordData.fretPositions; 
 
-    // 画像切り替えロジック (lowFretが2以上でfretboard2.jpgに切り替え)
     const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
-    // フレット番号ラベルの描画
     if (lowFret >= 2) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
-        
-        // 最終調整: 基準フレットラベルの位置を1フレットの線に近い位置へ再調整
         fretLabel.style.left = '10%'; 
         fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
     }
     
-    // ドット、開放弦、ミュートの描画
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
-        
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
-        
         const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
 
         if (displayFret === 0) {
-            // 開放弦 (ネック部分)
             dot.className = 'open-mark';
             dot.style.left = OPEN_MUTE_X_POSITION; 
             container.appendChild(dot);
             
         } else if (displayFret === -1) {
-            // ミュート (Xマーク)
             dot.className = 'mute-mark';
             dot.textContent = '×';
             dot.style.left = OPEN_MUTE_X_POSITION;
             container.appendChild(dot);
 
         } else if (displayFret >= 1 && displayFret <= 6) { 
-            // 押弦 (1Fから6F)
             dot.className = 'dot';
             dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`;
             container.appendChild(dot);
@@ -184,7 +174,7 @@ function drawFretboard(containerId, chordName) {
 }
 
 // =========================================================================
-// ロジック/イベントハンドラ
+// ロジック/イベントハンドラ (変更なし)
 // =========================================================================
 
 function startProgression(progressionName) {
@@ -210,9 +200,6 @@ function prevChord() {
     updateChordDisplay(currentProgression, currentChordIndex);
 }
 
-/**
- * 画面表示を更新する
- */
 function updateChordDisplay(progression, index) {
     const currentChordIndex = index;
     const currentChordName = progression[currentChordIndex];
@@ -279,7 +266,7 @@ function generateRandomProgression() {
 
 
 // =========================================================================
-// イベントリスナー設定
+// イベントリスナー設定 (変更なし)
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);
