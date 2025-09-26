@@ -2,330 +2,96 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>ギター練習アプリ (GitHub Pages版)</title>
-    <link rel="icon" href="data:," />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コード進行の追加</title>
     <style>
-/* --- CSS（見た目）最終版 --- */
-
-* {
-    box-sizing: border-box;
-}
-body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    text-align: center;
-    min-height: 100vh;
-    box-sizing: border-box;
-    overflow-y: auto;
-}
-
-/* コンテンツ全体を中央揃えするコンテナ */
-#container {
-    display: flex;
-    flex-direction: column;
-    align-items: center; 
-    width: 100%;
-}
-
-h1 {
-    color: #0056b3;
-    margin-top: 0px; 
-    margin-bottom: 0px; 
-    font-size: 2em;
-}
-h2 {
-    color: #0056b3;
-    margin-bottom: 0px;
-    margin-top: 0px; 
-    font-size: 1.5em;
-    line-height: 1.2; 
-}
-
-button {
-    padding: 8px 12px;
-    font-size: 15px;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
-    margin: 3px;
-}
-button:hover {
-    background-color: #0056b3;
-}
-
-select {
-    padding: 6px;
-    font-size: 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    margin: 3px;
-}
-
-form {
-    margin-bottom: 5px; 
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.fretboard-wrapper {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 0px;
-    margin-bottom: 0px; 
-    width: 550px; 
-}
-
-.fretboard-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 240px; 
-}
-
-/* フレットボードコンテナ (アスペクト比固定) */
-#fretboard-container, #next-fretboard-container {
-    position: relative;
-    
-    /* レスポンシブアスペクト比固定 */
-    padding-top: 91.66%; /* 220px/240px の比率で高さを固定 */
-    width: 100%; 
-    height: 0; 
-    
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-color: #fff;
-    box-sizing: border-box; 
-    border: 1px solid #ccc;
-    margin: 2px auto 2px; /* マージンを削減 */
-}
-
-.string {
-    position: absolute;
-    height: 100%;
-}
-
-/* ドット、開放弦、ミュートマークの共通設定 */
-.dot, .open-mark, .mute-mark {
-    position: absolute;
-    /* ドットとサイズを合わせるための基準値 */
-    width: 6%;
-    height: 6%;
-    border-radius: 50%; /* 丸い形状を保持 */
-    transform: translate(-50%, -50%); /* センタリングのキモ */
-    z-index: 2;
-    text-align: center;
-}
-
-.dot {
-    background-color: #FF4500;
-    border: 2px solid black;
-}
-
-/* 開放弦のドット (シンプルな白い丸 + 細い黒枠) */
-.open-mark {
-    background-color: white; /* 白いドット */
-    border: 1px solid black; /* 細い黒枠 */
-    font-size: 10px; 
-    line-height: 1.5; 
-}
-
-/* ★★★ ミュートの「×」の最終調整スタイル (文字だけで表示) ★★★ */
-.mute-mark {
-    background: none; /* 背景なし */
-    border: none; /* 枠線なし */
-    
-    color: black; /* 「×」を黒に */
-    font-weight: bold;      
-    font-size: 2em; /* 文字を大きくして目立たせる */
-    line-height: 0.5; /* 「×」が中央に来るように調整 */
-}
-
-.fret-label {
-    position: absolute;
-    font-size: 18px;
-    font-weight: bold;
-    color: black;
-    padding: 2px 4px; 
-    z-index: 3;
-}
-
-#current-chord-displayname, #next-chord-displayname {
-    font-size: 3em;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 0px;
-    margin-top: 0px;
-    line-height: 1.2;
-    min-height: 1.2em;
-}
-
-.progress-bar-container {
-    width: 80%;
-    max-width: 500px;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    margin: 5px auto;
-    height: 20px;
-    overflow: hidden;
-}
-.progress-bar {
-    height: 100%;
-    width: 0%;
-    background-color: #4CAF50;
-    text-align: center;
-    color: white;
-    line-height: 20px;
-    border-radius: 5px;
-    transition: width 0.5s ease-in-out;
-}
-
-/* ボタン配置用のコンテナ */
-.controls-buttons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin: 5px 0;
-}
-
-.controls, .button-container, .auto-update-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin: 5px 0;
-}
-
-@media (max-width: 600px) {
-
-    body {
-        padding: 5px; 
-    }
-    
-    .fretboard-wrapper {
-        flex-direction: column;
-        gap: 0px; 
-        padding: 0;
-        width: 100%; 
-    }
-
-    .fretboard-column {
-        width: 95%; 
-        max-width: 300px; 
-        margin: 2px auto; 
-        padding: 2px; 
-    }
-    
-    .controls {
-        flex-direction: column;
-    }
-
-    .button-container {
-        width: 100%;
-    }
-
-    #prev-chord-button, #next-chord-button, #random-progression-button {
-        width: 50%;
-        margin-bottom: 0px;
-        padding: 10px; 
-    }
-
-    .progress-bar-container {
-        width: 90%;
-        margin-bottom: 5px; 
-    }
-
-    #current-chord-displayname, #next-chord-displayname {
-        font-size: 1.8em; 
-        margin-bottom: 0px;
-        line-height: 1.1;
-    }
-    
-    .controls-buttons {
-        flex-direction: column; /* スマホでは縦並び */
-        width: 100%;
-    }
-}
+        /* ... (CSSは省略) ... */
     </style>
 </head>
 <body>
-    <div id="container"> 
-        <h1>ギター練習アプリ</h1>
+    <div id="container">
+        <h1>🎸 新しいコード進行の追加</h1>
 
-        <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
-            データの読み込みに失敗しました。
-        </div>
+        <form id="addProgressionForm">
+            <label for="progressionName">進行名:</label>
+            <input type="text" id="progressionName" name="progressionName" required>
+            <div class="note">例: 王道進行、カノン進行 (シートの1列目)</div>
 
-        <div class="controls">
-            <form id="progressionForm">
-                <div>
-                    <label for="progression-select">コード進行:</label>
-                    <select name="progressionName" id="progression-select">
-                    </select>
-                    <button type="button" id="start-progression-button">この進行で開始</button>
-                    <button type="button" id="random-progression-button">ランダム進行を生成</button>
-                </div>
-                
-                <div class="auto-update-controls">
-                    <label for="auto-update-time">自動更新:</label>
-                    <select id="auto-update-time">
-                        <option value="1000">1秒</option>
-                        <option value="2000">2秒</option>
-                        <option value="3000" selected>3秒</option>
-                        <option value="4000">4秒</option>
-                        <option value="5000">5秒</option>
-                    </select>
-                    <button id="toggle-auto-update" type="button">再生</button>
-                </div>
-            </form>
-            
-            <div class="controls-buttons">
-                <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #007bff;">📖 進行一覧を見る</button>
-                <button type="button" id="addProgressionButton" onclick="window.location.href='add.html';" style="background-color: #3f51b5;">➕ 進行を追加</button>
-            </div>
-        </div>
+            <label for="chordsInput">コード進行 (半角カンマ区切り):</label>
+            <textarea id="chordsInput" name="chordsInput" rows="4" required></textarea>
+            <div class="note">例: C, G, Am, Em, F, C, F, G (シートの2列目以降)</div>
 
-        <div class="fretboard-wrapper">
-            <div class="fretboard-column">
-                <div class="fretboard-label">現在のコード</div>
-                <h2 id="current-chord-displayname"></h2> 
-                <div id="fretboard-container">
-                </div>
-                <div class="button-container navigation-buttons">
-                    <button id="prev-chord-button">前のコード</button>
-                </div>
-            </div>
+            <button type="submit">進行をスプレッドシートに追加</button>
+        </form>
 
-            <div class="fretboard-column">
-                <div class="fretboard-label">次のコード</div>
-                <h2 id="next-chord-displayname"></h2> 
-                <div id="next-fretboard-container">
-                </div>
-                <div class="button-container navigation-buttons">
-                    <button id="next-chord-button">次のコード</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="progress-bar-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
+        <div id="message"></div>
+        <button id="back-button" onclick="window.location.href='index.html';">メイン画面に戻る</button>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        // ★★★ GAS_URLを忘れず googleusercontent.com に手動で変えること！ ★★★
+        const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec';
+        const form = document.getElementById('addProgressionForm');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            messageDiv.style.display = 'none';
+            messageDiv.className = '';
+            
+            const progressionName = document.getElementById('progressionName').value.trim();
+            const chordsInput = document.getElementById('chordsInput').value
+                                     .split(',')
+                                     .map(c => c.trim())
+                                     .filter(c => c.length > 0);
+
+            if (chordsInput.length === 0) {
+                showMessage('コードを1つ以上入力してください。', 'error');
+                return;
+            }
+
+            const payload = {
+                progressionName: progressionName,
+                chords: chordsInput
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST', // POSTリクエストをGASに送信
+                    headers: {
+                        // ★★★ プリフライト回避のため Content-Type を text/plain にする ★★★
+                        'Content-Type': 'text/plain' 
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(`✅ ${result.success}`, 'success');
+                    form.reset(); // 成功したらフォームをクリア
+                } else if (result.error) {
+                    showMessage(`❌ 追加失敗: ${result.error}`, 'error');
+                } else {
+                    showMessage('不明なエラーが発生しました。', 'error');
+                }
+
+            } catch (error) {
+                console.error('GAS POST処理中にエラー:', error);
+                showMessage(`通信エラーが発生しました: ${error.message}`, 'error');
+            }
+        });
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
