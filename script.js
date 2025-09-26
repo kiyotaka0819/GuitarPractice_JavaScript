@@ -21,7 +21,7 @@ let isAutoUpdating = false;
 // =========================================================================
 
 // ★★★ Googleusercontent.com に手動で書き換え済み！CORS回避の裏技URLや！ ★★★
-const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyGqOY--jN3pHzbvtJDRd6JLHNiRwBPHkIZA5Q4F_r3uZvIyZcso-iDkPJDYPf5fLotbw/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyai_3sF0i6ICdhE6FgXlMN7UMR1KruyLWB3V-OiHrSa7bWBhDbJ3TS45uYYhMaP6jsWQ/exec'; 
 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
