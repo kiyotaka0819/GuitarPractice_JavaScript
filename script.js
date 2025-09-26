@@ -1,4 +1,4 @@
-// script.js の全文 (データ取得ロジックをJSONPに変更、描画ズレ修正)
+// script.js の全文 (JSONP & バレーコード描画ロジック修正)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -17,7 +17,7 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // =========================================================================
-// GAS接続設定 (変更なし)
+// GAS接続設定
 // =========================================================================
 
 // 標準GAS URL (JSONPはCORSの影響を受けないので、このURLでOK)
@@ -26,10 +26,15 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztM
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 
-// フレットボードの描画パラメータ (変更なし)
+// =========================================================================
+// フレットボードの描画パラメータ
+// =========================================================================
 const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; 
 const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; 
-const OPEN_MUTE_X_POSITION = '3%';
+
+// 開放弦/ミュートのX軸位置 (前の検証で調整した値)
+const OPEN_MUTE_X_POSITION = '21%'; 
+
 
 // =========================================================================
 // GAS接続とデータ整形ロジック (JSONPでデータ取得)
@@ -119,7 +124,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画 (描画ズレ修正済み！)
+// フレットボード描画 (バレーコード描画ロジック修正済み！)
 // =========================================================================
 
 function drawFretboard(containerId, chordName) {
@@ -130,7 +135,7 @@ function drawFretboard(containerId, chordName) {
     
     const chordData = allChords[chordName];
     if (!chordData) {
-        container.textContent = 'コードデータなし';
+        container.textContent = 'コードデータなし";
         return;
     }
 
@@ -154,13 +159,25 @@ function drawFretboard(containerId, chordName) {
         const dot = document.createElement('div');
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
-        // 1. lowFretから見て相対的な位置を計算
-        const relativeFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
-        
-        // 2. lowFret >= 2 の時だけ、描画位置を1フレット分ずらすオフセットを適用 (ズレ修正！)
-        const offset = (lowFret >= 2) ? 1 : 0; 
-        const displayFret = (relativeFret >= 1) ? relativeFret + offset : relativeFret;
-        
+        let displayFret = fret; // まずはそのまま
+
+        if (fret > 0) {
+            // ★★★ 押弦フレットの場合の計算ロジックを修正！ ★★★
+            // lowFretが押さえているフレットと一致する場合、描画上の1フレット目になるよう +1 する
+            displayFret = fret - lowFret + 1; 
+            // 例: Bm (lowFret=2) の6弦(fret=2) -> displayFret = 1 (描画上の1フレット目)
+            
+        } else if (fret === 0) {
+            // 開放弦(0)の場合: 0のまま
+            displayFret = 0;
+            
+        } else if (fret === -1) {
+            // ミュート(-1)の場合: -1のまま
+            displayFret = -1;
+        }
+
+        // lowFret >= 2 の時の描画オフセットは一旦解除 (上のロジックで対応できてるはず)
+
         if (displayFret === 0) {
             dot.className = 'open-mark';
             dot.style.left = OPEN_MUTE_X_POSITION; 
@@ -169,10 +186,11 @@ function drawFretboard(containerId, chordName) {
         } else if (displayFret === -1) {
             dot.className = 'mute-mark';
             dot.textContent = '×';
-            dot.style.left = OPEN_MUTE_X_POSITION;
+            dot.style.left = OPEN_MUTE_X_POSITION; 
             container.appendChild(dot);
 
         } else if (displayFret >= 1 && displayFret <= 6) { 
+            // 描画上の1フレット目から6フレット目までのドット
             dot.className = 'dot';
             dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`; 
             container.appendChild(dot);
@@ -272,11 +290,6 @@ function generateRandomProgression() {
 
     startProgression(randomProgName);
 }
-
-
-// =========================================================================
-// イベントリスナー設定 (変更なし)
-// =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);
 
