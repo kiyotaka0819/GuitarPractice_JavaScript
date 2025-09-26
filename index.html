@@ -2,38 +2,51 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>コード進行トレーナー</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>ギター練習アプリ (GitHub Pages版)</title>
     <link rel="icon" href="data:," />
     <style>
-/* --- 共通スタイル --- */
+/* --- CSS（見た目）最終版 --- */
+
 * {
     box-sizing: border-box;
 }
 body {
     width: 100%;
     margin: 0;
-    padding: 10px;
+    padding: 0;
+    overflow-x: hidden;
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
     text-align: center;
     min-height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
+
+/* コンテンツ全体を中央揃えするコンテナ */
 #container {
-    max-width: 800px; /* 画面を広く使うために最大幅を広げた */
-    margin: 0 auto;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    width: 100%;
 }
+
 h1 {
     color: #0056b3;
-    margin-top: 0;
-    text-align: center;
+    margin-top: 0px; 
+    margin-bottom: 0px; 
+    font-size: 2em;
 }
+h2 {
+    color: #0056b3;
+    margin-bottom: 0px;
+    margin-top: 0px; 
+    font-size: 1.5em;
+    line-height: 1.2; 
+}
+
 button {
     padding: 8px 12px;
     font-size: 15px;
@@ -43,168 +56,351 @@ button {
     background-color: #007bff;
     color: white;
     margin: 3px;
-    width: 100%;
 }
 button:hover {
     background-color: #0056b3;
 }
-/* --- ナビゲーションとコントロール --- */
-#navigation, #controls {
-    text-align: center;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap; 
-}
-/* コントロールエリアはグリッドで3つのボタンとタイトルを配置 */
-#controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* 3列にする */
-    gap: 5px;
-}
-#progressionTitle {
-    grid-column: 1 / 4; /* タイトルは3列全て使う */
-    width: 100%;
-    text-align: center;
-}
-#prevChordBtn, #nextChordBtn, #modeToggleButton {
-    width: auto; /* gridの子要素なのでwidth:100%を解除 */
-    min-width: 0;
+
+select {
+    padding: 6px;
+    font-size: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin: 3px;
 }
 
-
-/* --- 進行選択UI --- */
-#progressionSelectArea {
-    margin-bottom: 15px;
-    text-align: center;
-    border: 1px solid #ddd;
+form {
+    margin-bottom: 5px; 
     padding: 10px;
-    border-radius: 4px;
-}
-#progressionSelect {
-    padding: 8px;
-    font-size: 1em;
-    width: 80%;
-    max-width: 400px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
-/* --- 表示エリア --- */
-#chordDisplay {
-    margin: 20px 0;
+/* 既存の2個表示用のラッパー (モード切り替えで表示/非表示) */
+.fretboard-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 0px;
+    margin-bottom: 0px; 
+    width: 550px; 
+}
+
+/* ★★★ 新規追加: 多段リスト表示用のコンテナ ★★★ */
+#list-mode-display {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
+    gap: 10px; /* コード間の間隔 */
+    width: 100%;
+    max-width: 800px;
+    margin: 10px auto;
 }
-
-/* --- コード図（フレットボード）のスタイル --- */
-.fretboard-container {
-    padding: 10px;
-    border: 1px solid #ccc;
+/* ★★★ 新規追加: リストモード時の個別のコードコンテナ ★★★ */
+.list-chord-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: calc(20% - 10px); /* 1行5個表示の目安 (gapを考慮) */
+    min-width: 120px; /* 最小幅 */
+    padding: 5px;
+    border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #fff;
-    text-align: center;
-    margin-bottom: 10px;
-    /* 詳細モード（2個表示）の時の幅 */
-    width: calc(50% - 10px); 
-    max-width: 300px;
 }
-.fretboard-container h2 {
-    margin: 0 0 10px 0;
+/* リストモード時のフレットボードサイズ調整 */
+.list-fretboard-size {
+    /* 既存の freatboard-container のスタイルを上書き */
+    padding-top: 100%; /* 1:1の比率に */
+    width: 100%;
+    height: 0;
+}
+.list-chord-container.current-chord-list {
+    border: 3px solid #ff6600; /* 現在のコードを目立たせる */
+    padding: 4px;
+}
+/* リストモード時のラベル */
+.list-chord-container h2 {
     font-size: 1.2em;
-    color: #333;
-}
-/* SVGまたはCanvasのコンテナ */
-.fretboard-svg-container {
-    /* ここにSVG/Canvasで画像を描画する */
-    display: inline-block;
-    border: 1px solid #000;
-    padding: 5px;
-    background-color: #f7f7f7;
-    width: 200px; /* 詳細モードサイズ */
-    height: 300px; /* 詳細モードサイズ */
-    box-sizing: content-box;
-}
-
-/* --- コンパクトモード (多段表示) のスタイル --- */
-.compact-mode #chordDisplay {
-    justify-content: flex-start; /* 左寄せ */
-}
-.compact-mode .fretboard-container {
-    width: calc(20% - 10px); /* 1行5個表示の目安 */
-    min-width: 130px; 
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #eee;
-    box-shadow: none;
-}
-.compact-mode .fretboard-svg-container {
-    width: 100px; /* 小さくする */
-    height: 150px; /* 小さくする */
-    padding: 3px;
-    border: 1px solid #aaa;
-}
-.compact-mode .fretboard-container h2 {
-    font-size: 1em;
     margin-bottom: 5px;
+    min-height: auto;
 }
-.compact-mode .fretboard-container.current-chord {
-    border: 2px solid #ff6600; /* 現在のコードを目立たせる */
+/* リストモード時のドット/マークサイズ調整 (既存のクラスを継承/調整) */
+.list-chord-container .dot, 
+.list-chord-container .open-mark, 
+.list-chord-container .mute-mark {
+    width: 10%; /* ドットサイズを相対的に大きく */
+    height: 10%;
+}
+.list-chord-container .mute-mark {
+    font-size: 1.5em; 
+}
+.list-chord-container .fret-label {
+    font-size: 12px;
+    left: 5%; 
+    bottom: 5%;
 }
 
-#statusMessage {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-    font-weight: bold;
-    text-align: center;
-    display: none;
+
+/* 既存のスタイルを再利用/修正 */
+.fretboard-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 240px; 
 }
-.error {
-    background-color: #f8d7da;
-    color: #721c24;
+
+/* フレットボードコンテナ (アスペクト比固定) */
+#fretboard-container, #next-fretboard-container {
+    position: relative;
+    padding-top: 91.66%; 
+    width: 100%; 
+    height: 0; 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    box-sizing: border-box; 
+    border: 1px solid #ccc;
+    margin: 2px auto 2px;
+}
+
+.string {
+    position: absolute;
+    height: 100%;
+}
+
+.dot, .open-mark, .mute-mark {
+    position: absolute;
+    width: 6%;
+    height: 6%;
+    border-radius: 50%; 
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    text-align: center;
+}
+
+.dot {
+    background-color: #FF4500;
+    border: 2px solid black;
+}
+
+.open-mark {
+    background-color: white; 
+    border: 1px solid black; 
+    font-size: 10px; 
+    line-height: 1.5; 
+}
+
+.mute-mark {
+    background: none; 
+    border: none; 
+    color: black; /* Xは黒に変更 */
+    font-weight: bold;
+    font-size: 2em; 
+    line-height: 0.5; 
+    text-shadow: none; /* text-shadowは消した方がきれいや */
+}
+/* Xの色のための追記。ミュートマークは文字だけで表示されてるから、CSSで色指定が必要やで */
+.fretboard-wrapper .mute-mark {
+    color: rgb(234, 255, 0); /* 元々黄色やったみたいやから戻す */
+    text-shadow: 1px 1px 0 #000000, -1px 1px 0 #000000, 1px -1px 0 #000000, -1px -1px 0 #000000;
+}
+.list-chord-container .mute-mark {
+    color: black;
+    text-shadow: none;
+}
+
+
+.fret-label {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    color: black;
+    padding: 2px 4px; 
+    z-index: 3;
+}
+
+#current-chord-displayname, #next-chord-displayname {
+    font-size: 3em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    line-height: 1.2;
+    min-height: 1.2em;
+}
+
+.progress-bar-container {
+    width: 80%;
+    max-width: 500px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 5px auto;
+    height: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: #4CAF50;
+    text-align: center;
+    color: white;
+    line-height: 20px;
+    border-radius: 5px;
+    transition: width 0.5s ease-in-out;
+}
+
+/* ボタン配置用のコンテナ */
+.controls-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+.controls, .button-container, .auto-update-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 5px; 
+    }
+    
+    .fretboard-wrapper {
+        flex-direction: column;
+        gap: 0px; 
+        padding: 0;
+        width: 100%; 
+    }
+    /* リストモード時のモバイル調整 */
+    #list-mode-display {
+        gap: 5px;
+    }
+    .list-chord-container {
+        width: calc(33.3% - 5px); /* スマホでは3個並びを優先 */
+        min-width: 100px;
+    }
+
+    .fretboard-column {
+        width: 95%; 
+        max-width: 300px; 
+        margin: 2px auto; 
+        padding: 2px; 
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+
+    .button-container {
+        width: 100%;
+    }
+
+    #prev-chord-button, #next-chord-button, #random-progression-button {
+        width: 50%;
+        margin-bottom: 0px;
+        padding: 10px; 
+    }
+
+    .progress-bar-container {
+        width: 90%;
+        margin-bottom: 5px; 
+    }
+
+    #current-chord-displayname, #next-chord-displayname {
+        font-size: 1.8em; 
+        margin-bottom: 0px;
+        line-height: 1.1;
+    }
+    
+    .controls-buttons {
+        flex-direction: column; 
+        width: 100%;
+    }
 }
     </style>
 </head>
 <body>
-    <div id="container">
-        <h1>コード進行トレーナー</h1>
+    <div id="container"> 
+        <h1>ギター練習アプリ</h1>
 
-        <div id="progressionSelectArea">
-            <label for="progressionSelect">コード進行を選ぶ:</label>
-            <select id="progressionSelect">
-                </select>
+        <div id="error-container" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">
+            データの読み込みに失敗しました。
         </div>
-        <div id="controls">
-            <h2 id="progressionTitle" style="width: 100%; text-align: center;">進行を選択してください</h2>
+
+        <div class="controls">
+            <form id="progressionForm">
+                <div>
+                    <label for="progression-select">コード進行:</label>
+                    <select name="progressionName" id="progression-select">
+                    </select>
+                    <button type="button" id="start-progression-button">この進行で開始</button>
+                    <button type="button" id="random-progression-button">ランダム進行を生成</button>
+                </div>
+                
+                <div class="auto-update-controls">
+                    <label for="auto-update-time">自動更新:</label>
+                    <select id="auto-update-time">
+                        <option value="1000">1秒</option>
+                        <option value="2000">2秒</option>
+                        <option value="3000" selected>3秒</option>
+                        <option value="4000">4秒</option>
+                        <option value="5000">5秒</option>
+                    </select>
+                    <button id="toggle-auto-update" type="button">再生</button>
+                </div>
+            </form>
             
-            <button id="prevChordBtn" style="background-color: #6c757d;">
-                ← 前のコード
-            </button>
-            <button onclick="toggleDisplayMode();" id="modeToggleButton" style="background-color: #ff6600;">
-                ▶ 全て表示に切り替え
-            </button>
-            <button id="nextChordBtn" style="background-color: #6c757d;">
-                次のコード →
-            </button>
+            <div class="controls-buttons">
+                <button type="button" id="toggle-display-mode" style="background-color: #ff6600;">
+                    ▶ 全て表示に切り替え
+                </button>
+                <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #007bff;">📖 進行一覧を見る</button>
+                <button type="button" id="addProgressionButton" onclick="window.location.href='add.html';" style="background-color: #3f51b5;">➕ 進行を追加</button>
+            </div>
         </div>
 
-        <div id="chordDisplay">
-            <p style="text-align: center; width: 100%;">データを読み込み中...</p>
+        <div class="fretboard-wrapper" id="detailed-mode-display">
+            <div class="fretboard-column">
+                <div class="fretboard-label">現在のコード</div>
+                <h2 id="current-chord-displayname"></h2> 
+                <div id="fretboard-container">
+                </div>
+                <div class="button-container navigation-buttons">
+                    <button id="prev-chord-button">前のコード</button>
+                </div>
+            </div>
+
+            <div class="fretboard-column">
+                <div class="fretboard-label">次のコード</div>
+                <h2 id="next-chord-displayname"></h2> 
+                <div id="next-fretboard-container">
+                </div>
+                <div class="button-container navigation-buttons">
+                    <button id="next-chord-button">次のコード</button>
+                </div>
+            </div>
         </div>
-        
-        <div id="statusMessage"></div>
-        
-        <div id="navigation">
-            <button onclick="window.location.href='progressions.html';" style="background-color: #17a2b8;">
-                コード進行一覧
-            </button>
-            <button onclick="window.location.href='add.html';" style="background-color: #28a745;">
-                コード / 進行を追加
-            </button>
+
+        <div id="list-mode-display" style="display: none;">
+            </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
         </div>
     </div>
-    
-    <script src="script.js"></script> 
+    <script src="script.js"></script>
 </body>
 </html>
