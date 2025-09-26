@@ -1,4 +1,4 @@
-// script.js の全文 (画像パスと描画ロジックの再確認)
+// script.js の全文
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -41,9 +41,12 @@ const OPEN_MUTE_X_POSITION = '4%';
 async function fetchDataFromGAS() {
     const cachedData = localStorage.getItem(CACHE_KEY);
     const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
+    // キャッシュが有効な場合はそれを使用する
     if (cachedData && cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < CACHE_TTL)) {
         return JSON.parse(cachedData);
     }
+    
+    // キャッシュがない、または期限切れの場合はGASからデータを取得
     return new Promise((resolve, reject) => {
         const callbackName = 'gasCallback_' + Date.now();
         window[callbackName] = (data) => {
@@ -54,6 +57,7 @@ async function fetchDataFromGAS() {
                 reject(new Error(data.message || data.error));
                 return;
             }
+            // 成功したらキャッシュを保存
             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
             localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
             resolve(data);
@@ -73,6 +77,7 @@ async function fetchDataFromGAS() {
         console.error("GASからのデータ取得中にエラー:", error);
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
         errorContainer.style.display = 'block';
+        // エラー時でも、もし古いキャッシュがあればそれを使う
         if (cachedData) {
             return JSON.parse(cachedData);
         }
@@ -107,7 +112,7 @@ function populateProgressionSelect() {
     }
 }
 // =========================================================================
-// フレットボード描画 (画像パスは問題ないが、lowFret=1でラベル非表示を再確認)
+// フレットボード描画 (ロジック変更なし)
 // =========================================================================
 
 function drawFretboard(containerId, chordName) {
@@ -129,8 +134,7 @@ function drawFretboard(containerId, chordName) {
     const lowFret = chordData.lowFret;
     const fretPositions = chordData.fretPositions; 
 
-    // ★★★ 画像ファイル名と拡張子はここで設定されとるで！ ★★★
-    // フォルダ名や大文字小文字が正しいかを確認してくれ！
+    // 画像ファイル名と拡張子はここで設定されとるで！
     const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
@@ -215,7 +219,7 @@ function renderListMode(progression, currentIndex) {
 
 
 // =========================================================================
-// ロジック/イベントハンドラ (変更なし)
+// ロジック/イベントハンドラ (既存のロジック変更なし)
 // =========================================================================
 
 function updateChordDisplay(progression, index) {
@@ -338,7 +342,7 @@ function generateRandomProgression() {
     const numSteps = 4;
     const randomChordNames = [];
     for (let i = 0; i < numSteps; i++) {
-        const randomChordName = allChordNames[Math.floor(Math.random() * allChordNames.length)];
+        const randomChordName = allChordNames[Math.floor(MathordNames.length)];
         randomChordNames.push(randomChordName);
     }
     const randomProgName = `ランダム (${randomChordNames.join('-')})`;
@@ -381,3 +385,25 @@ randomProgressionButton.addEventListener('click', () => {
     }
 });
 toggleAutoUpdateButton.addEventListener('click', toggleAutoUpdate);
+
+
+// =========================================================================
+// ★★★ 新規追加：キャッシュクリア機能のロジック ★★★
+// =========================================================================
+
+const clearCacheButton = document.getElementById('clearCacheButton');
+
+function clearLocalCache() {
+    // キャッシュを全て削除
+    localStorage.removeItem(CACHE_KEY); 
+    localStorage.removeItem(CACHE_KEY + 'Timestamp'); 
+    
+    alert("キャッシュをクリアしました。データを再読み込みします。");
+    
+    // 画面をリロードしてデータを強制再取得
+    window.location.reload(); 
+}
+
+if (clearCacheButton) {
+    clearCacheButton.addEventListener('click', clearLocalCache);
+}
