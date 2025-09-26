@@ -6,7 +6,7 @@
     <title>コード進行一覧</title>
     <link rel="icon" href="data:," />
     <style>
-/* --- CSS（見た目） --- */
+/* --- 共通スタイル --- */
 * {
     box-sizing: border-box;
 }
@@ -20,7 +20,6 @@ body {
     text-align: center;
     min-height: 100vh;
 }
-
 #container {
     max-width: 600px;
     margin: 0 auto;
@@ -28,13 +27,13 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: left;
 }
-
 h1 {
     color: #0056b3;
     margin-top: 0; 
+    text-align: center;
 }
-
 button {
     padding: 8px 12px;
     font-size: 15px;
@@ -44,151 +43,74 @@ button {
     background-color: #007bff;
     color: white;
     margin: 3px;
+    width: 100%;
 }
 button:hover {
     background-color: #0056b3;
 }
-
-/* 進行一覧のスタイル */
-#progression-list {
-    list-style: none;
-    padding: 0;
-    text-align: left;
-}
-
+/* --- 進行リスト固有スタイル --- */
 .progression-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.progression-item:last-child {
-    border-bottom: none;
-}
-
-.progression-name {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #333;
-}
-
-/* エラーメッセージ */
-#error-container {
-    color: red; 
-    font-weight: bold; 
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
     margin-bottom: 10px;
+    background-color: #f9f9f9;
+}
+.progression-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 5px;
+}
+.progression-chords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.chord-box {
+    background-color: #e9ecef;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+#statusMessage {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    display: none;
+}
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
 }
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>🎸 コード進行一覧</h1>
+        <h1>コード進行 一覧</h1>
 
-        <div id="error-container" style="display: none;"></div>
+        <div id="controls" style="text-align: center; margin-bottom: 15px;">
+            <button onclick="loadProgressions();" style="width: 80%; max-width: 400px; background-color: #28a745;">
+                ✅ 最新のコード進行を再読み込み
+            </button>
+        </div>
+        <div id="statusMessage"></div>
 
-        <ul id="progression-list">
-            </ul>
-        
-        <button onclick="window.location.href='index.html';" style="background-color: #5cb85c; margin-top: 15px;">
+        <div id="progressionsList">
+            <p style="text-align: center;">データを読み込み中です...</p>
+        </div>
+
+        <button onclick="window.location.href='index.html';" style="background-color: #5cb85c; margin-top: 20px;">
             メイン画面に戻る
         </button>
     </div>
-    <script>
-        // index.htmlのロジックから必要な設定をコピー
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvU2tqK8MHU3ferlvXzfS8lX4tFyrVQukg_RbC-51c8JCu7rlTQRgJQLRbAQGrBUQPBg/exec'; 
-        const CACHE_KEY = 'chordAppCache';
-        const CACHE_TTL = 3600000; 
-
-        // index.htmlと同じデータ取得ロジック（JSONP）
-        async function fetchDataFromGAS() {
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
-            const errorContainer = document.getElementById('error-container');
-
-            if (cachedData && cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < CACHE_TTL)) {
-                return JSON.parse(cachedData);
-            }
-            
-            return new Promise((resolve, reject) => {
-                const callbackName = 'gasCallback_' + Date.now();
-                window[callbackName] = (data) => {
-                    delete window[callbackName]; 
-                    script.remove(); 
-                    if (data.error) {
-                        reject(new Error(data.message || data.error));
-                        return;
-                    }
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-                    localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
-                    resolve(data);
-                };
-
-                const script = document.createElement('script');
-                script.src = `${GAS_URL}?callback=${callbackName}`; 
-                
-                script.onerror = () => {
-                    delete window[callbackName];
-                    script.remove();
-                    reject(new Error("GASからのデータ取得に失敗しました。"));
-                };
-                
-                document.head.appendChild(script);
-            })
-            .catch(error => {
-                errorContainer.textContent = `データ読み込みエラー: ${error.message}. 古いキャッシュがあれば使用します。`;
-                errorContainer.style.display = 'block';
-
-                if (cachedData) {
-                    return JSON.parse(cachedData);
-                }
-                return null;
-            });
-        }
-        
-        // 進行リストの描画
-        function loadProgressionsList() {
-            const listContainer = document.getElementById('progression-list');
-            listContainer.innerHTML = '<li class="progression-item">読み込み中...</li>';
-
-            fetchDataFromGAS().then(data => {
-                listContainer.innerHTML = '';
-                if (!data || !data.progressions || Object.keys(data.progressions).length === 0) {
-                    listContainer.innerHTML = '<li class="progression-item">コード進行が見つかりませんでした。</li>';
-                    return;
-                }
-
-                const allProgressions = data.progressions;
-                for (const name in allProgressions) {
-                    const chords = allProgressions[name];
-                    const listItem = document.createElement('li');
-                    listItem.className = 'progression-item';
-                    
-                    const nameDiv = document.createElement('div');
-                    nameDiv.className = 'progression-name';
-                    // 進行名とコードの内訳を表示
-                    nameDiv.innerHTML = `${name}<br><small>(${chords.length}コード: ${chords.join(', ')})</small>`;
-
-                    const startButton = document.createElement('button');
-                    startButton.textContent = '▶ 演奏開始';
-                    startButton.onclick = () => {
-                        // 選択した進行名をローカルストレージに保存し、index.htmlへ遷移
-                        localStorage.setItem('tempProgressionSelection', name);
-                        window.location.href = 'index.html';
-                    };
-                    
-                    listItem.appendChild(nameDiv);
-                    listItem.appendChild(startButton);
-                    listContainer.appendChild(listItem);
-                }
-
-            }).catch(error => {
-                listContainer.innerHTML = '<li class="progression-item">データの読み込みに失敗しました。</li>';
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', loadProgressionsList);
-    </script>
+    <script src="progressions.js"></script>
 </body>
 </html>

@@ -105,7 +105,7 @@ button:hover {
             </div>
             
             <div class="form-group">
-                <label for="lowFret">開始フレット (1で開放、2以上でバレーコードなど):</label>
+                <label for="lowFret">基準フレット (1で開放、2以上でバレーコードなど):</label>
                 <input type="number" id="lowFret" name="lowFret" value="1" min="1" required>
             </div>
 
@@ -118,11 +118,11 @@ button:hover {
                     <div><label>4弦</label><input type="text" name="fret4" value="2" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
                     <div><label>3弦</label><input type="text" name="fret3" value="0" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
                     <div><label>2弦</label><input type="text" name="fret2" value="1" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
-                    <div><label>1弦</label><input type="text" name="fret1" value="0" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>1弦</label><label for="fret1">1弦</label><input type="text" id="fret1" name="fret1" value="0" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
                 </div>
             </div>
             
-            <button type="submit" style="background-color: #4CAF50;">コードをGASに登録</button>
+            <button type="submit" style="background-color: #4CAF50;">コードを登録する</button>
         </form>
 
         <hr style="margin: 30px 0;">
@@ -138,7 +138,7 @@ button:hover {
                 <input type="text" id="progressionChords" name="progressionChords" placeholder="C, G, Am, F" required>
             </div>
             
-            <button type="submit" style="background-color: #FFA500;">進行をGASに登録</button>
+            <button type="submit" style="background-color: #FFA500;">コード進行を登録する</button>
         </form>
 
         <div id="statusMessage"></div>

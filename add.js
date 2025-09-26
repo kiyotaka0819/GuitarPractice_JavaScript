@@ -1,6 +1,6 @@
-// add.js の最終確定版
+// add.js の最終確定版（GET/JSONPで書き込みを実現）
 
-// index.htmlと同じGASのURLを使う (GETリクエストで読み書き兼用)
+// ★★★ ここを必ずあなたのGASデプロイURLに更新すること！ ★★★
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx1I7sOC37M1RR6aAAqfJoQCVi7KTGtQk4Z13s6cGplpF28kf88H4vKNVvDIzudeqbA/exec'; 
 
 const addChordForm = document.getElementById('addChordForm');
@@ -18,17 +18,16 @@ function showStatus(message, isSuccess) {
     }, 3000);
 }
 
-// データ送信関数 (データをURLに乗せてGETリクエストとして送信する)
-// GAS側はdoGetでこれを受け取り、書き込み処理を行う
+// データ送信関数 (データをURLに乗せてGETリクエストとして送信する JSONP)
 async function sendDataToGAS(data, endpoint, typeOfAdd) {
     // 1. データをURLクエリパラメータ形式に変換
-    // 重要なのは type=add と type_of_add=chord/progression
     const allData = {
         type: 'add', // GASで書き込み処理だと判断させるフラグ
         type_of_add: typeOfAdd, // どちらのフォームからのデータかをGASに伝える
         ...data
     };
     
+    // URLSearchParamsを使うと、URLエンコードしてくれるから安心や
     const params = new URLSearchParams(allData).toString();
     
     // 2. コールバック名を設定
@@ -37,7 +36,7 @@ async function sendDataToGAS(data, endpoint, typeOfAdd) {
     // 3. GETリクエストのURLを作成 (JSONP)
     const url = `${GAS_URL}?callback=${callbackName}&${params}`; 
 
-    statusMessage.textContent = `${endpoint}をGASに送信中...`;
+    statusMessage.textContent = `${endpoint}を送信中...`;
     statusMessage.className = '';
     statusMessage.style.display = 'block';
 
@@ -51,6 +50,7 @@ async function sendDataToGAS(data, endpoint, typeOfAdd) {
                 showStatus(result.message || `${endpoint}の登録に成功しました！`, true);
                 resolve(true);
             } else {
+                // GAS側でエラーが起きても、JSONPで返ってくる
                 showStatus(`エラー: ${result.message}`, false);
                 reject(new Error(result.message));
             }
@@ -78,7 +78,7 @@ addChordForm.addEventListener('submit', async (e) => {
     const chordName = document.getElementById('chordName').value.trim();
     const lowFret = document.getElementById('lowFret').value;
     
-    // 弦のデータを取得
+    // 弦のデータは、name属性を使って直接取得する (GAS側でe.parameterで受け取る値と合わせる)
     const fretInputs = document.querySelectorAll('#fretPositions input');
     const data = {
         chordName: chordName,
