@@ -191,7 +191,17 @@ form {
 }
 
 /* ドット、開放弦、ミュートマークの共通設定 */
-.dot, .open-mark, .mute-mark {
+.dot {
+    position: absolute;
+    width: 8%; /* 詳細モードのドットサイズ */
+    height: 8%;
+    border-radius: 50%; 
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    text-align: center;
+}
+
+.open-mark, .mute-mark {
     position: absolute;
     width: 6%; /* 詳細モードのドットサイズ */
     height: 6%;
