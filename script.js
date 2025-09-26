@@ -15,8 +15,14 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // =========================================================================
-// ★★★ 最終座標調整エリア (変更なし) ★★★
+// ★★★ 最終座標調整エリアとGAS設定 ★★★
 // =========================================================================
+
+// GAS接続設定
+// ★★★ ここにデプロイしたGASの「テスト実行」URLを入れるんやで！ ★★★
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwZizOpDP99I4mKEujhbXGEAory8rEA5t4e9XsVw8we/dev'; 
+const CACHE_KEY = 'chordAppCache';
+const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 
 // フレットボードの描画パラメータ
 const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; 
@@ -24,14 +30,22 @@ const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5];
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
-// GAS接続とデータ整形ロジック (変更なし)
+// GAS接続とデータ整形ロジック (LocalStorage対応追加)
 // =========================================================================
-
-// ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby7RvFKpps4GA9l_AW7yrjEp5FVW-F8_jVdfG5zUdzNKaIkkvzEPfbCE_egifIfC6O_wA/exec'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
+    // 1. LocalStorageからキャッシュを確認
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
+
+    if (cachedData && cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < CACHE_TTL)) {
+        console.log("✅ LocalStorageからキャッシュデータを読み込みました。");
+        return JSON.parse(cachedData);
+    }
+    
+    // 2. キャッシュがない、または期限切れの場合、GASからデータを取得する
+    console.log("❌ キャッシュ期限切れ、または初回アクセス。GASからデータを取得します...");
     try {
         const response = await fetch(GAS_URL);
         if (!response.ok) {
@@ -43,11 +57,22 @@ async function fetchDataFromGAS() {
             throw new Error(data.message || data.error);
         }
 
+        // 3. 成功したらキャッシュを更新する
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
+        
         return data; 
     } catch (error) {
         console.error("GASからのデータ取得中にエラー:", error);
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
         errorContainer.style.display = 'block';
+
+        // 4. 古いキャッシュをフォールバックとして使用
+        if (cachedData) {
+            console.warn("古いキャッシュを使用して続行します。");
+            return JSON.parse(cachedData);
+        }
+        
         return null;
     }
 }
@@ -63,7 +88,14 @@ async function loadProgressions() {
         populateProgressionSelect();
         errorContainer.style.display = 'none';
 
-        if (Object.keys(allProgressions).length > 0) {
+        // LocalStorageから一時保存の進行名を取得し、優先的に開始する
+        const tempProgressionName = localStorage.getItem('tempProgressionSelection');
+        
+        if (tempProgressionName && allProgressions[tempProgressionName]) {
+            startProgression(tempProgressionName);
+            progressionSelect.value = tempProgressionName; 
+            localStorage.removeItem('tempProgressionSelection'); 
+        } else if (Object.keys(allProgressions).length > 0) {
             const firstProgressionName = Object.keys(allProgressions)[0];
             startProgression(firstProgressionName);
         }
@@ -115,8 +147,8 @@ function drawFretboard(containerId, chordName) {
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
         
-        // ★★★ 修正箇所: 基準フレットラベルの位置を1フレット目の下に移動 ★★★
-        fretLabel.style.left = '8%'; // 1フレット目の左側に寄せる調整値
+        // 最終調整: 基準フレットラベルの位置を1フレットの線に近い位置へ再調整
+        fretLabel.style.left = '10%'; 
         fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
     }
@@ -125,11 +157,8 @@ function drawFretboard(containerId, chordName) {
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         
-        // Y軸の位置は修正された定数を使用
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
-        // 描画するフレット位置を計算 (lowFretからの相対位置)
-        // 修正済み: + 1 を削除して、正しい相対フレット位置を取得
         const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
 
         if (displayFret === 0) {
@@ -148,7 +177,6 @@ function drawFretboard(containerId, chordName) {
         } else if (displayFret >= 1 && displayFret <= 6) { 
             // 押弦 (1Fから6F)
             dot.className = 'dot';
-            // FRET_POSITIONSのインデックスは 1F の時 0
             dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`;
             container.appendChild(dot);
         }
@@ -156,7 +184,7 @@ function drawFretboard(containerId, chordName) {
 }
 
 // =========================================================================
-// ロジック/イベントハンドラ (変更なし)
+// ロジック/イベントハンドラ
 // =========================================================================
 
 function startProgression(progressionName) {
@@ -251,7 +279,7 @@ function generateRandomProgression() {
 
 
 // =========================================================================
-// イベントリスナー設定 (変更なし)
+// イベントリスナー設定
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);

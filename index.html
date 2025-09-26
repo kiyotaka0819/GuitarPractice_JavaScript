@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>ギター練習アプリ (GitHub Pages版)</title>
+    <link rel="icon" href="data:," />
     <style>
 /* --- CSS（見た目）最終版 --- */
 
@@ -204,6 +205,15 @@ form {
     transition: width 0.5s ease-in-out;
 }
 
+/* ボタン配置用のコンテナ */
+.controls-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
 .controls, .button-container, .auto-update-controls {
     display: flex;
     justify-content: center;
@@ -256,6 +266,11 @@ form {
         margin-bottom: 0px;
         line-height: 1.1;
     }
+    
+    .controls-buttons {
+        flex-direction: column; /* スマホでは縦並び */
+        width: 100%;
+    }
 }
     </style>
 </head>
@@ -290,7 +305,10 @@ form {
                 </div>
             </form>
             
-            <button type="button" id="addProgressionButton" onclick="window.location.href='add.html';" style="background-color: #3f51b5;">➕ コード進行を追加</button>
+            <div class="controls-buttons">
+                <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #007bff;">📖 進行一覧を見る</button>
+                <button type="button" id="addProgressionButton" onclick="window.location.href='add.html';" style="background-color: #3f51b5;">➕ 進行を追加</button>
+            </div>
         </div>
 
         <div class="fretboard-wrapper">
