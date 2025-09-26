@@ -133,7 +133,7 @@ form {
 /* 開放弦マークとミュートマーク */
 .open-mark, .mute-mark {
     position: absolute;
-    /* ドットとサイズを合わせる */
+    /* ドットとサイズを合わせるための基準値 */
     width: 6%;
     height: 6%;
     border-radius: 50%;
@@ -151,7 +151,7 @@ form {
 }
 
 .mute-mark {
-    /* ★★★ 最終修正: サイズをパーセント化し、フォントサイズも相対化 ★★★ */
+    /* ★★★ 修正: サイズをパーセント化し、フォントサイズも相対化 (ウィンドウサイズに連動) ★★★ */
     background-color: transparent; 
     border: none;                  
     color: black;
@@ -162,9 +162,7 @@ form {
     font-size: 1.8em; /* 相対サイズに */
     font-weight: bold;             
     line-height: 0.8; /* 中央寄せ調整 */
-    transform: translate(-50%, -50%); /* 中央寄せを再定義 */
-    
-    /* 不要なプロパティを削除済み */
+    transform: translate(-50%, -50%); 
 }
 
 .fret-label {
@@ -292,7 +290,7 @@ form {
                 </div>
             </form>
             
-            <button type="button" id="openListButton" onclick="window.location.href='progressions.html';" style="background-color: #3f51b5;">📖 進行一覧を見る</button>
+            <button type="button" id="openListButton" onclick="window.location.href='add.html';" style="background-color: #3f51b5;">📖 コード進行を追加</button>
         </div>
 
         <div class="fretboard-wrapper">

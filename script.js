@@ -15,18 +15,12 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // =========================================================================
-// ★★★ 最終最終座標調整エリア ★★★
+// ★★★ 最終座標調整エリア (変更なし) ★★★
 // =========================================================================
 
 // フレットボードの描画パラメータ
-// X軸（left）に使うべき定数：フレットの位置 (1F→6F)
-// ★★★ 最終調整: 1Fの位置を 23 から 22 に修正！ ★★★
 const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; // 1Fが22%に修正
-
-// Y軸（top）に使うべき定数：弦の位置 (E6→E1) (変更なし)
-const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5];
-
-// 開放弦/ミュートのX座標 (変更なし)
+const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; // E6を71.5%に修正
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
@@ -34,7 +28,7 @@ const OPEN_MUTE_X_POSITION = '3%';
 // =========================================================================
 
 // ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbylBTT1V-B7Dgpw_ZgF7PJ4C0myzlM-ovo9mqTfnpEJ7EGnRQpcwo2-D1E4lLzGGsDn/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxf6o5mKfQfd0iJIOjGIfZqR94yvbwyq162Zeo4OPPDCf-oz_XNbkTiGHMo6UhP1EFGqg/exec'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
@@ -133,7 +127,8 @@ function drawFretboard(containerId, chordName) {
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         // 描画するフレット位置を計算 (lowFretからの相対位置)
-        const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret) + 1;
+        // ★★★ 修正箇所: + 1 を削除して、正しい相対フレット位置を取得する ★★★
+        const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
 
         if (displayFret === 0) {
             // 開放弦 (ネック部分)
@@ -151,6 +146,8 @@ function drawFretboard(containerId, chordName) {
         } else if (displayFret >= 1 && displayFret <= 6) { 
             // 押弦 (1Fから6F)
             dot.className = 'dot';
+            // FRET_POSITIONSのインデックスは 1F の時 0
+            // なので displayFret (1～6) を使うには - 1 が必要
             dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`;
             container.appendChild(dot);
         }

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コード進行の追加</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+        }
+        #container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+        }
+        button:hover {
+            background-color: #1e7e34;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: -5px;
+        }
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            text-align: center;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        #back-button {
+            margin-top: 10px;
+            background-color: #007bff;
+            width: auto;
+            padding: 8px 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>🎸 新しいコード進行の追加</h1>
+
+        <form id="addProgressionForm">
+            <label for="progressionName">進行名:</label>
+            <input type="text" id="progressionName" name="progressionName" required>
+            <div class="note">例: 王道進行、カノン進行 (シートの1列目)</div>
+
+            <label for="chordsInput">コード進行 (半角カンマ区切り):</label>
+            <textarea id="chordsInput" name="chordsInput" rows="4" required></textarea>
+            <div class="note">例: C, G, Am, Em, F, C, F, G (シートの2列目以降)</div>
+
+            <button type="submit">進行をスプレッドシートに追加</button>
+        </form>
+
+        <div id="message"></div>
+        <button id="back-button" onclick="window.location.href='index.html';">メイン画面に戻る</button>
+    </div>
+
+    <script>
+        const GAS_URL = 'あんたのデプロイしたGASのURL'; // ★★★ index.htmlと同じURLをここにも設定！ ★★★
+        const form = document.getElementById('addProgressionForm');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            messageDiv.style.display = 'none';
+            messageDiv.className = '';
+            
+            const progressionName = document.getElementById('progressionName').value.trim();
+            // カンマ区切りを配列に変換し、空要素やスペースを削除
+            const chordsInput = document.getElementById('chordsInput').value
+                                .split(',')
+                                .map(c => c.trim())
+                                .filter(c => c.length > 0);
+
+            if (chordsInput.length === 0) {
+                showMessage('コードを1つ以上入力してください。', 'error');
+                return;
+            }
+
+            const payload = {
+                progressionName: progressionName,
+                chords: chordsInput
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST', // POSTリクエストをGASに送信
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(`✅ ${result.success}`, 'success');
+                    form.reset(); // 成功したらフォームをクリア
+                } else if (result.error) {
+                    showMessage(`❌ 追加失敗: ${result.error}`, 'error');
+                } else {
+                    showMessage('不明なエラーが発生しました。', 'error');
+                }
+
+            } catch (error) {
+                console.error('GAS POST処理中にエラー:', error);
+                showMessage(`通信エラーが発生しました: ${error.message}`, 'error');
+            }
+        });
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
