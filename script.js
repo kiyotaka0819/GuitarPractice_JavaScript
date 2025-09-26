@@ -1,4 +1,4 @@
-// script.js の全文 (ドット描画バグ修正とモード切り替えロジック)
+// script.js の全文 (画像パスと描画ロジックの再確認)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -9,12 +9,10 @@ const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
 const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container');
 
-// ★★★ 追加要素 ★★★
 const detailedModeDisplay = document.getElementById('detailed-mode-display');
 const listModeDisplay = document.getElementById('list-mode-display');
 const toggleDisplayModeButton = document.getElementById('toggle-display-mode');
-// ★★★ モード管理変数 ★★★
-let currentDisplayMode = 'detailed'; // 'detailed' (2個表示) または 'list' (多段表示)
+let currentDisplayMode = 'detailed'; 
 
 let allProgressions = {}; 
 let allChords = {};       
@@ -26,7 +24,6 @@ let isAutoUpdating = false;
 // =========================================================================
 // GAS接続設定 (変更なし)
 // =========================================================================
-// GAS URLはあなたのデプロイURLにすること！
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx1I7sOC37M1RR6aAAqfJoQCVi7KTGtQk4Z13s6cGplpF28kf88H4vKNVvDIzudeqbA/exec'; 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
@@ -34,9 +31,7 @@ const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 // =========================================================================
 // フレットボードの描画パラメータ (変更なし)
 // =========================================================================
-// FRET_POSITIONS: [1F, 2F, 3F, 4F, 5F, 6F] 
 const FRET_POSITIONS = [22, 43, 65, 86, 88, 95]; 
-// Y_AXIS_STRING_POSITIONS: [6弦, 5弦, 4弦, 3弦, 2弦, 1弦]
 const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 48, 41, 33.5]; 
 const OPEN_MUTE_X_POSITION = '4%'; 
 
@@ -112,14 +107,13 @@ function populateProgressionSelect() {
     }
 }
 // =========================================================================
-// フレットボード描画 (リストモードの描画位置バグを修正！)
+// フレットボード描画 (画像パスは問題ないが、lowFret=1でラベル非表示を再確認)
 // =========================================================================
 
 function drawFretboard(containerId, chordName) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // リストモードかどうかを判定するフラグ
     const isListModeElement = container.classList.contains('list-fretboard-size'); 
     
     container.innerHTML = '';
@@ -135,16 +129,17 @@ function drawFretboard(containerId, chordName) {
     const lowFret = chordData.lowFret;
     const fretPositions = chordData.fretPositions; 
 
-    // 画像の切り替え (lowFret 2以上でハイフレット用の画像に)
+    // ★★★ 画像ファイル名と拡張子はここで設定されとるで！ ★★★
+    // フォルダ名や大文字小文字が正しいかを確認してくれ！
     const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
+    // lowFretが2以上のときだけフレット番号を表示する（バレーコードなど）
     if (lowFret >= 2) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
         
-        // ★★★ lowFretラベルの位置調整 (修正済み) ★★★
         if (isListModeElement) {
             fretLabel.style.left = '5%';
             fretLabel.style.bottom = '5%';
@@ -166,13 +161,13 @@ function drawFretboard(containerId, chordName) {
 
         if (fret > 0) {
             if (lowFret > 1) {
+                // ハイフレット表示の場合の相対位置計算
                 displayFret = fret - lowFret + 1; 
             } else {
                 displayFret = fret;
             }
         } 
 
-        // ★★★ ドットとミュートの位置調整は共通のOPEN_MUTE_X_POSITIONを使う ★★★
         if (displayFret === 0) {
             dot.className = 'open-mark';
             dot.style.left = OPEN_MUTE_X_POSITION; 
@@ -193,7 +188,6 @@ function drawFretboard(containerId, chordName) {
 }
 
 
-// ★★★ 新規追加: リストモード用の描画関数 (変更なし) ★★★
 function renderListMode(progression, currentIndex) {
     listModeDisplay.innerHTML = ''; 
 
@@ -221,14 +215,13 @@ function renderListMode(progression, currentIndex) {
 
 
 // =========================================================================
-// ロジック/イベントハンドラ (モード切り替え対応)
+// ロジック/イベントハンドラ (変更なし)
 // =========================================================================
 
 function updateChordDisplay(progression, index) {
     const currentChordIndex = index;
     const progressionLength = progression.length;
 
-    // プログレスバーの更新
     const progressBar = document.getElementById('progress-bar');
     const progressWidth = ((currentChordIndex + 1) / progressionLength) * 100;
     progressBar.style.width = `${progressWidth}%`;
@@ -236,7 +229,6 @@ function updateChordDisplay(progression, index) {
 
 
     if (currentDisplayMode === 'detailed') {
-        // 詳細モード (既存の2個表示)
         detailedModeDisplay.style.display = 'flex';
         listModeDisplay.style.display = 'none';
         toggleDisplayModeButton.textContent = '▶ 全て表示に切り替え';
@@ -253,19 +245,16 @@ function updateChordDisplay(progression, index) {
         drawFretboard('fretboard-container', currentChordName);
         drawFretboard('next-fretboard-container', nextChordName);
         
-        // ナビゲーションボタンを表示
         nextChordButton.style.display = 'block';
         prevChordButton.style.display = 'block';
         
     } else {
-        // リストモード (全コード多段表示)
-        detailedModeDisplay.style.display = 'none';
         listModeDisplay.style.display = 'flex';
+        detailedModeDisplay.style.display = 'none';
         toggleDisplayModeButton.textContent = '▶ 2コード表示に切り替え';
         
         renderListMode(progression, currentChordIndex);
         
-        // ナビゲーションボタンを非表示
         nextChordButton.style.display = 'none';
         prevChordButton.style.display = 'none';
     }
@@ -280,7 +269,6 @@ function startProgression(progressionName) {
     
     currentProgression = chordNames;
     currentChordIndex = 0;
-    // 開始時は必ず詳細モードにリセットする
     currentDisplayMode = 'detailed'; 
     updateChordDisplay(currentProgression, currentChordIndex);
 }
@@ -310,7 +298,6 @@ function toggleDisplayMode() {
         currentDisplayMode = 'detailed';
     }
     
-    // オートアップデートを一時停止する
     if (isAutoUpdating) { 
         toggleAutoUpdate();
     }
@@ -325,7 +312,6 @@ function toggleAutoUpdate() {
         alert("コード進行を選択して開始してください。");
         return;
     }
-    // リストモードでは自動更新を許可しない
     if (currentDisplayMode === 'list') {
         alert("全コード表示モードでは自動更新はできません。2コード表示に切り替えてください。");
         return;

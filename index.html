@@ -91,56 +91,80 @@ form {
     width: 550px; 
 }
 
-/* ★★★ 新規追加: 多段リスト表示用のコンテナ ★★★ */
+/* フレットボードコンテナ (アスペクト比固定) */
+#fretboard-container, #next-fretboard-container {
+    position: relative;
+    padding-top: 91.66%; /* 画像の縦横比に合わせる */
+    width: 100%; 
+    height: 0; 
+    
+    /* ★★★ 画像表示安定のための設定 ★★★ */
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat;
+    
+    background-color: #fff;
+    box-sizing: border-box; 
+    border: 1px solid #ccc;
+    margin: 2px auto 2px;
+}
+
+
+/* --- リストモード (全コード表示) 関連のCSS --- */
+
 #list-mode-display {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px; /* コード間の間隔 */
+    gap: 10px; 
     width: 100%;
     max-width: 800px;
     margin: 10px auto;
 }
-/* ★★★ 新規追加: リストモード時の個別のコードコンテナ ★★★ */
+/* リストモード時の個別のコードコンテナ */
 .list-chord-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: calc(20% - 10px); /* 1行5個表示の目安 (gapを考慮) */
-    min-width: 120px; /* 最小幅 */
+    min-width: 120px; 
     padding: 5px;
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #fff;
 }
-/* リストモード時のフレットボードサイズ調整 */
+/* リストモード時のフレットボードサイズ調整 (描画領域) */
 .list-fretboard-size {
-    /* 既存の freatboard-container のスタイルを上書き */
+    position: relative; /* ドットのためのrelativeを追加 */
     padding-top: 100%; /* 1:1の比率に */
     width: 100%;
     height: 0;
+    
+    /* ★★★ リストモードの背景画像も調整 (詳細モードと統一) ★★★ */
+    background-size: cover; 
+    background-position: center;
+    background-repeat: no-repeat;
 }
 .list-chord-container.current-chord-list {
-    border: 3px solid #ff6600; /* 現在のコードを目立たせる */
+    border: 3px solid #ff6600; 
     padding: 4px;
 }
-/* リストモード時のラベル */
 .list-chord-container h2 {
     font-size: 1.2em;
     margin-bottom: 5px;
     min-height: auto;
 }
-/* リストモード時のドット/マークサイズ調整 (★ここを修正★) */
+/* リストモード時のドット/マークサイズ調整 (★詳細モードと同じ6%に統一★) */
 .list-chord-container .dot, 
 .list-chord-container .open-mark, 
 .list-chord-container .mute-mark {
-    width: 8%; /* 6%から8%に微増 */
-    height: 8%; /* 6%から8%に微増 */
+    width: 6%; 
+    height: 6%; 
 }
 .list-chord-container .mute-mark {
     font-size: 1.5em; 
     color: black;
-    text-shadow: none; /* リストモードのXにはシャドウ不要 */
+    text-shadow: none; 
 }
 .list-chord-container .fret-label {
     font-size: 12px;
@@ -149,28 +173,14 @@ form {
 }
 
 
-/* 既存のスタイルを再利用/修正 */
+/* --- 共通の描画エレメント --- */
+
 .fretboard-column {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 240px; 
 }
-
-/* フレットボードコンテナ (アスペクト比固定) */
-#fretboard-container, #next-fretboard-container {
-    position: relative;
-    padding-top: 91.66%; 
-    width: 100%; 
-    height: 0; 
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-color: #fff;
-    box-sizing: border-box; 
-    border: 1px solid #ccc;
-    margin: 2px auto 2px;
-}
-
 .string {
     position: absolute;
     height: 100%;
@@ -207,9 +217,9 @@ form {
     font-size: 2em; 
     line-height: 0.5; 
 }
-/* 詳細モードのXの色の調整（画像から判断して再設定） */
+/* 詳細モードのXの色の調整 */
 .fretboard-wrapper .mute-mark {
-    color: #FFD700; /* 黄色っぽい色に */
+    color: #FFD700; 
     text-shadow: 1px 1px 0 #000000, -1px 1px 0 #000000, 1px -1px 0 #000000, -1px -1px 0 #000000;
 }
 
@@ -233,6 +243,8 @@ form {
     min-height: 1.2em;
 }
 
+/* ... (中略：プログレスバー、ボタンのCSSは変更なし) ... */
+
 .progress-bar-container {
     width: 80%;
     max-width: 500px;
@@ -253,7 +265,6 @@ form {
     transition: width 0.5s ease-in-out;
 }
 
-/* ボタン配置用のコンテナ */
 .controls-buttons {
     display: flex;
     justify-content: center;
@@ -282,6 +293,13 @@ form {
         padding: 0;
         width: 100%; 
     }
+    .fretboard-column {
+        width: 95%; 
+        max-width: 300px; 
+        margin: 2px auto; 
+        padding: 2px; 
+    }
+
     /* リストモード時のモバイル調整 */
     #list-mode-display {
         gap: 5px;
@@ -290,43 +308,19 @@ form {
         width: calc(33.3% - 5px); /* スマホでは3個並びを優先 */
         min-width: 100px;
     }
-
-    .fretboard-column {
-        width: 95%; 
-        max-width: 300px; 
-        margin: 2px auto; 
-        padding: 2px; 
-    }
     
     .controls {
         flex-direction: column;
     }
-
     .button-container {
         width: 100%;
     }
-
     #prev-chord-button, #next-chord-button, #random-progression-button {
         width: 50%;
         margin-bottom: 0px;
         padding: 10px; 
     }
-
-    .progress-bar-container {
-        width: 90%;
-        margin-bottom: 5px; 
-    }
-
-    #current-chord-displayname, #next-chord-displayname {
-        font-size: 1.8em; 
-        margin-bottom: 0px;
-        line-height: 1.1;
-    }
-    
-    .controls-buttons {
-        flex-direction: column; 
-        width: 100%;
-    }
+    /* ... (後略) ... */
 }
     </style>
 </head>
