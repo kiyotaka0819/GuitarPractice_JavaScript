@@ -28,7 +28,7 @@ const OPEN_MUTE_X_POSITION = '3%';
 // =========================================================================
 
 // ★★★ ここにデプロイしたGASのURLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxf6o5mKfQfd0iJIOjGIfZqR94yvbwyq162Zeo4OPPDCf-oz_XNbkTiGHMo6UhP1EFGqg/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby7RvFKpps4GA9l_AW7yrjEp5FVW-F8_jVdfG5zUdzNKaIkkvzEPfbCE_egifIfC6O_wA/exec'; 
 
 // GASからデータを取得する非同期関数
 async function fetchDataFromGAS() {
