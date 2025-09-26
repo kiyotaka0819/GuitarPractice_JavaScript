@@ -2,96 +2,193 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>コード進行の追加</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>コード進行一覧</title>
+    <link rel="icon" href="data:," />
     <style>
-        /* ... (CSSは省略) ... */
+/* --- CSS（見た目） --- */
+* {
+    box-sizing: border-box;
+}
+body {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    text-align: center;
+    min-height: 100vh;
+}
+
+#container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #0056b3;
+    margin-top: 0; 
+}
+
+button {
+    padding: 8px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    margin: 3px;
+}
+button:hover {
+    background-color: #0056b3;
+}
+
+/* 進行一覧のスタイル */
+#progression-list {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+}
+
+.progression-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.progression-item:last-child {
+    border-bottom: none;
+}
+
+.progression-name {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+}
+
+/* エラーメッセージ */
+#error-container {
+    color: red; 
+    font-weight: bold; 
+    margin-bottom: 10px;
+}
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>🎸 新しいコード進行の追加</h1>
+        <h1>🎸 コード進行一覧</h1>
 
-        <form id="addProgressionForm">
-            <label for="progressionName">進行名:</label>
-            <input type="text" id="progressionName" name="progressionName" required>
-            <div class="note">例: 王道進行、カノン進行 (シートの1列目)</div>
+        <div id="error-container" style="display: none;"></div>
 
-            <label for="chordsInput">コード進行 (半角カンマ区切り):</label>
-            <textarea id="chordsInput" name="chordsInput" rows="4" required></textarea>
-            <div class="note">例: C, G, Am, Em, F, C, F, G (シートの2列目以降)</div>
-
-            <button type="submit">進行をスプレッドシートに追加</button>
-        </form>
-
-        <div id="message"></div>
-        <button id="back-button" onclick="window.location.href='index.html';">メイン画面に戻る</button>
+        <ul id="progression-list">
+            </ul>
+        
+        <button onclick="window.location.href='index.html';" style="background-color: #5cb85c; margin-top: 15px;">
+            メイン画面に戻る
+        </button>
     </div>
-
     <script>
-        // ★★★ GAS URLを標準URLに更新 ★★★
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec';
-        const form = document.getElementById('addProgressionForm');
-        const messageDiv = document.getElementById('message');
+        // index.htmlのロジックから必要な設定をコピー
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec'; 
+        const CACHE_KEY = 'chordAppCache';
+        const CACHE_TTL = 3600000; 
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            messageDiv.style.display = 'none';
-            messageDiv.className = '';
-            
-            const progressionName = document.getElementById('progressionName').value.trim();
-            const chordsInput = document.getElementById('chordsInput').value
-                                         .split(',')
-                                         .map(c => c.trim())
-                                         .filter(c => c.length > 0);
+        // index.htmlと同じデータ取得ロジック（JSONP）
+        async function fetchDataFromGAS() {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
+            const errorContainer = document.getElementById('error-container');
 
-            if (chordsInput.length === 0) {
-                showMessage('コードを1つ以上入力してください。', 'error');
-                return;
+            if (cachedData && cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < CACHE_TTL)) {
+                return JSON.parse(cachedData);
             }
+            
+            return new Promise((resolve, reject) => {
+                const callbackName = 'gasCallback_' + Date.now();
+                window[callbackName] = (data) => {
+                    delete window[callbackName]; 
+                    script.remove(); 
+                    if (data.error) {
+                        reject(new Error(data.message || data.error));
+                        return;
+                    }
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                    localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
+                    resolve(data);
+                };
 
-            const payload = {
-                progressionName: progressionName,
-                chords: chordsInput
-            };
+                const script = document.createElement('script');
+                script.src = `${GAS_URL}?callback=${callbackName}`; 
+                
+                script.onerror = () => {
+                    delete window[callbackName];
+                    script.remove();
+                    reject(new Error("GASからのデータ取得に失敗しました。"));
+                };
+                
+                document.head.appendChild(script);
+            })
+            .catch(error => {
+                errorContainer.textContent = `データ読み込みエラー: ${error.message}. 古いキャッシュがあれば使用します。`;
+                errorContainer.style.display = 'block';
 
-            try {
-                // POSTリクエストはCORS回避のため、text/plainを維持
-                const response = await fetch(GAS_URL, {
-                    method: 'POST', 
-                    headers: {
-                        'Content-Type': 'text/plain' 
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (cachedData) {
+                    return JSON.parse(cachedData);
                 }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(`✅ ${result.success}`, 'success');
-                    form.reset(); 
-                } else if (result.error) {
-                    showMessage(`❌ 追加失敗: ${result.error}`, 'error');
-                } else {
-                    showMessage('不明なエラーが発生しました。', 'error');
-                }
-
-            } catch (error) {
-                console.error('GAS POST処理中にエラー:', error);
-                showMessage(`通信エラーが発生しました: ${error.message}`, 'error');
-            }
-        });
-
-        function showMessage(text, type) {
-            messageDiv.textContent = text;
-            messageDiv.className = type;
-            messageDiv.style.display = 'block';
+                return null;
+            });
         }
+        
+        // 進行リストの描画
+        function loadProgressionsList() {
+            const listContainer = document.getElementById('progression-list');
+            listContainer.innerHTML = '<li class="progression-item">読み込み中...</li>';
+
+            fetchDataFromGAS().then(data => {
+                listContainer.innerHTML = '';
+                if (!data || !data.progressions || Object.keys(data.progressions).length === 0) {
+                    listContainer.innerHTML = '<li class="progression-item">コード進行が見つかりませんでした。</li>';
+                    return;
+                }
+
+                const allProgressions = data.progressions;
+                for (const name in allProgressions) {
+                    const chords = allProgressions[name];
+                    const listItem = document.createElement('li');
+                    listItem.className = 'progression-item';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'progression-name';
+                    // 進行名とコードの内訳を表示
+                    nameDiv.innerHTML = `${name}<br><small>(${chords.length}コード: ${chords.join(', ')})</small>`;
+
+                    const startButton = document.createElement('button');
+                    startButton.textContent = '▶ 演奏開始';
+                    startButton.onclick = () => {
+                        // 選択した進行名をローカルストレージに保存し、index.htmlへ遷移
+                        localStorage.setItem('tempProgressionSelection', name);
+                        window.location.href = 'index.html';
+                    };
+                    
+                    listItem.appendChild(nameDiv);
+                    listItem.appendChild(startButton);
+                    listContainer.appendChild(listItem);
+                }
+
+            }).catch(error => {
+                listContainer.innerHTML = '<li class="progression-item">データの読み込みに失敗しました。</li>';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProgressionsList);
     </script>
 </body>
 </html>
