@@ -1,4 +1,4 @@
-// script.js の全文 (データ取得ロジックをPOSTに変更した最終修正版)
+// script.js の全文 (データ取得ロジックをJSONPに変更)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -20,8 +20,8 @@ let isAutoUpdating = false;
 // GAS接続設定 (ここが重要！)
 // =========================================================================
 
-// ★★★ リダイレクト回避の裏技URL (あなたのIDに contentuser が入る！) ★★★
-const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec'; 
+// ★★★ 標準GAS URL (JSONPはCORSの影響を受けないので、このURLでOK) ★★★
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec'; 
 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
@@ -32,11 +32,10 @@ const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5];
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
-// GAS接続とデータ整形ロジック (ここが修正箇所やで！)
+// GAS接続とデータ整形ロジック (JSONPでデータ取得する！)
 // =========================================================================
 
 async function fetchDataFromGAS() {
-    // 1. LocalStorageからキャッシュを確認
     const cachedData = localStorage.getItem(CACHE_KEY);
     const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
 
@@ -45,45 +44,54 @@ async function fetchDataFromGAS() {
         return JSON.parse(cachedData);
     }
     
-    // 2. キャッシュがない、または期限切れの場合、GASからデータを取得する
-    console.log("❌ キャッシュ期限切れ、または初回アクセス。GASからデータを取得します...");
-    try {
-        const response = await fetch(GAS_URL, {
-            // ★★★ GETリクエストではなく、CORS回避のために method: 'POST' にする！ ★★★
-            method: 'POST', 
-            // Content-Typeを text/plain にしてCORSプリフライトを回避
-            headers: { 'Content-Type': 'text/plain' },
-            // bodyを空にすることで、GAS側（doPost）で「データ取得」と判断させる
-            body: '' 
-        });
+    console.log("❌ キャッシュ期限切れ、または初回アクセス。JSONPでGASからデータを取得します...");
+    
+    // JSONPは fetch API を使わず、Promiseと動的scriptタグでラップする
+    return new Promise((resolve, reject) => {
+        // 1. コールバック関数をグローバルに定義 (GAS側でこの関数を呼び出す)
+        const callbackName = 'gasCallback_' + Date.now();
+        window[callbackName] = (data) => {
+            // 成功時の処理
+            delete window[callbackName]; // グローバル関数を削除
+            script.remove();             // scriptタグを削除
+            
+            if (data.error) {
+                reject(new Error(data.message || data.error));
+                return;
+            }
+            // 成功したらキャッシュを更新して解決
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
+            resolve(data);
+        };
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
+        // 2. <script>タグを作成し、GASにコールバック名とGETリクエストを送る
+        const script = document.createElement('script');
         
-        if (data.error) {
-            throw new Error(data.message || data.error);
-        }
-
-        // 3. 成功したらキャッシュを更新する
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
+        // GAS URLに「?callback=関数名」を付けてリクエストする
+        script.src = `${GAS_URL}?callback=${callbackName}`; 
         
-        return data; 
-    } catch (error) {
+        script.onerror = () => {
+             delete window[callbackName];
+             script.remove();
+             reject(new Error("JSONPリクエストが失敗しました。GASのURLまたはデプロイを確認してください。"));
+        };
+        
+        // 3. ドキュメントに挿入して実行
+        document.head.appendChild(script);
+    })
+    .catch(error => {
+        // エラー処理（フォールバック）
         console.error("GASからのデータ取得中にエラー:", error);
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
         errorContainer.style.display = 'block';
 
-        // 4. 古いキャッシュをフォールバックとして使用
         if (cachedData) {
             console.warn("古いキャッシュを使用して続行します。");
             return JSON.parse(cachedData);
         }
-        
         return null;
-    }
+    });
 }
 
 // データの読み込みと初期表示 (変更なし)
@@ -120,9 +128,8 @@ function populateProgressionSelect() {
     }
 }
 
-
 // =========================================================================
-// フレットボード描画 (変更なし)
+// フレットボード描画、ロジック、イベントリスナー (全て変更なし)
 // =========================================================================
 
 function drawFretboard(containerId, chordName) {
@@ -175,10 +182,6 @@ function drawFretboard(containerId, chordName) {
         }
     });
 }
-
-// =========================================================================
-// ロジック/イベントハンドラ (変更なし)
-// =========================================================================
 
 function startProgression(progressionName) {
     if (!allProgressions[progressionName]) return; 
@@ -268,11 +271,6 @@ function generateRandomProgression() {
 
     startProgression(randomProgName);
 }
-
-
-// =========================================================================
-// イベントリスナー設定 (変更なし)
-// =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);
 

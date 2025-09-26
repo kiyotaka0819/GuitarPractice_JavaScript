@@ -29,8 +29,8 @@
     </div>
 
     <script>
-        // ★★★ GAS_URLを忘れず googleusercontent.com に手動で変えること！ ★★★
-        const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec';
+        // ★★★ GAS URLを標準URLに更新 ★★★
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec';
         const form = document.getElementById('addProgressionForm');
         const messageDiv = document.getElementById('message');
 
@@ -42,9 +42,9 @@
             
             const progressionName = document.getElementById('progressionName').value.trim();
             const chordsInput = document.getElementById('chordsInput').value
-                                     .split(',')
-                                     .map(c => c.trim())
-                                     .filter(c => c.length > 0);
+                                         .split(',')
+                                         .map(c => c.trim())
+                                         .filter(c => c.length > 0);
 
             if (chordsInput.length === 0) {
                 showMessage('コードを1つ以上入力してください。', 'error');
@@ -57,10 +57,10 @@
             };
 
             try {
+                // POSTリクエストはCORS回避のため、text/plainを維持
                 const response = await fetch(GAS_URL, {
-                    method: 'POST', // POSTリクエストをGASに送信
+                    method: 'POST', 
                     headers: {
-                        // ★★★ プリフライト回避のため Content-Type を text/plain にする ★★★
                         'Content-Type': 'text/plain' 
                     },
                     body: JSON.stringify(payload)
@@ -74,7 +74,7 @@
 
                 if (result.success) {
                     showMessage(`✅ ${result.success}`, 'success');
-                    form.reset(); // 成功したらフォームをクリア
+                    form.reset(); 
                 } else if (result.error) {
                     showMessage(`❌ 追加失敗: ${result.error}`, 'error');
                 } else {
