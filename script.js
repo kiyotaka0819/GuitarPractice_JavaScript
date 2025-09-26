@@ -33,7 +33,7 @@ const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 const FRET_POSITIONS = [22, 43, 65, 86, 88, 95]; 
 
 // Y_AXIS_STRING_POSITIONS: [6弦, 5弦, 4弦, 3弦, 2弦, 1弦] (全て -2.0 調整済み)
-const Y_AXIS_STRING_POSITIONS = [69.5, 61.5, 54.5, 47, 39, 32.5]; 
+const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 48, 41, 33.5]; 
 
 // OPEN_MUTE_X_POSITION: 開放弦/ミュートのX軸位置 (4%に確定)
 const OPEN_MUTE_X_POSITION = '4%'; 
