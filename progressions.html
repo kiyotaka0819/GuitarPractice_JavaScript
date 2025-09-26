@@ -43,7 +43,9 @@ button {
     background-color: #007bff;
     color: white;
     margin: 3px;
-    width: 100%;
+    /* ボタンを横並びにするため、幅を少し調整 */
+    width: 49%; 
+    max-width: 290px;
 }
 button:hover {
     background-color: #0056b3;
@@ -64,6 +66,7 @@ button:hover {
     border-bottom: 1px dashed #ccc;
     padding-bottom: 5px;
 }
+/* 詳細表示用 */
 .progression-chords {
     display: flex;
     flex-wrap: wrap;
@@ -76,6 +79,26 @@ button:hover {
     font-size: 0.9em;
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;
+}
+/* コンパクト表示用 */
+.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+.compact-table th, .compact-table td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: center;
+}
+.compact-table th {
+    background-color: #eee;
+}
+.fret-pos {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85em;
+    word-break: break-all;
 }
 
 #statusMessage {
@@ -96,9 +119,12 @@ button:hover {
     <div id="container">
         <h1>コード進行 一覧</h1>
 
-        <div id="controls" style="text-align: center; margin-bottom: 15px;">
-            <button onclick="loadProgressions();" style="width: 80%; max-width: 400px; background-color: #28a745;">
-                ✅ 最新のコード進行を再読み込み
+        <div id="controls" style="text-align: center; margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <button onclick="loadProgressions();" style="background-color: #28a745;">
+                ✅ 最新データを再読み込み
+            </button>
+            <button onclick="toggleDisplayMode();" id="modeToggleButton" style="background-color: #ff6600;">
+                ▶ コンパクト表示に切り替え
             </button>
         </div>
         <div id="statusMessage"></div>
