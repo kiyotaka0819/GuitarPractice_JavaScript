@@ -2,139 +2,95 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>コード進行一覧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コード進行の追加</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        h1 {
-            color: #0056b3;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 10px;
-        }
-        .progression-list {
-            list-style: none;
-            padding: 0;
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto;
-        }
-        .progression-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .progression-name {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-            width: 150px;
-            flex-shrink: 0;
-        }
-        .progression-chords {
-            flex-grow: 1;
-            margin-right: 15px;
-            color: #555;
-            font-size: 1.1em;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        button {
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #28a745;
-            color: white;
-        }
-        button:hover {
-            background-color: #1e7e34;
-        }
-        #loading {
-            text-align: center;
-            margin-top: 50px;
-            font-size: 1.5em;
-            color: #666;
-        }
+        /* ... (CSSは省略) ... */
     </style>
 </head>
 <body>
-    <h1>コード進行一覧</h1>
-    <p>ここで進行を選択すると、メイン画面で一時的に利用できます。</p>
-    <div id="loading">データを読み込み中...</div>
-    <ul id="progressionList" class="progression-list">
-        </ul>
-    <p style="text-align: center;"><a href="index.html">メイン画面に戻る</a></p>
+    <div id="container">
+        <h1>🎸 新しいコード進行の追加</h1>
+
+        <form id="addProgressionForm">
+            <label for="progressionName">進行名:</label>
+            <input type="text" id="progressionName" name="progressionName" required>
+            <div class="note">例: 王道進行、カノン進行 (シートの1列目)</div>
+
+            <label for="chordsInput">コード進行 (半角カンマ区切り):</label>
+            <textarea id="chordsInput" name="chordsInput" rows="4" required></textarea>
+            <div class="note">例: C, G, Am, Em, F, C, F, G (シートの2列目以降)</div>
+
+            <button type="submit">進行をスプレッドシートに追加</button>
+        </form>
+
+        <div id="message"></div>
+        <button id="back-button" onclick="window.location.href='index.html';">メイン画面に戻る</button>
+    </div>
 
     <script>
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwIpI_-rQs44T-h4mhlRBlXJOfP0fVpeqFwVu1IkdW4QXo1cu8wxrzpVaecSD2DIaeSfw/exec'; 
+        // ★★★ GAS_URLを忘れず googleusercontent.com に手動で変えること！ ★★★
+        const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec';
+        const form = document.getElementById('addProgressionForm');
+        const messageDiv = document.getElementById('message');
 
-        const progressionListElement = document.getElementById('progressionList');
-        const loadingElement = document.getElementById('loading');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            messageDiv.style.display = 'none';
+            messageDiv.className = '';
+            
+            const progressionName = document.getElementById('progressionName').value.trim();
+            const chordsInput = document.getElementById('chordsInput').value
+                                     .split(',')
+                                     .map(c => c.trim())
+                                     .filter(c => c.length > 0);
 
-        document.addEventListener('DOMContentLoaded', loadAndDisplayProgressions);
+            if (chordsInput.length === 0) {
+                showMessage('コードを1つ以上入力してください。', 'error');
+                return;
+            }
 
-        // GASから進行データを取得し、一覧表示する
-        async function loadAndDisplayProgressions() {
+            const payload = {
+                progressionName: progressionName,
+                chords: chordsInput
+            };
+
             try {
-                const response = await fetch(GAS_API_URL);
-                const data = await response.json(); 
-                const progressions = data.progressions; 
-
-                loadingElement.style.display = 'none';
-                
-                // 進行データが存在しない場合
-                if (Object.keys(progressions).length === 0) {
-                    progressionListElement.innerHTML = '<p>進行データが見つかりませんでした。スプレッドシートを確認してください。</p>';
-                    return;
-                }
-
-                // データをリスト表示
-                for (const name in progressions) {
-                    const chords = progressions[name];
-                    const listItem = document.createElement('li');
-                    listItem.className = 'progression-item';
-                    
-                    listItem.innerHTML = `
-                        <div class="progression-name">${name}</div>
-                        <div class="progression-chords">${chords.join(' → ')}</div>
-                        <button data-progression-name="${name}">メインに追加</button>
-                    `;
-                    
-                    progressionListElement.appendChild(listItem);
-                }
-
-                // ボタンにイベントリスナーを設定
-                progressionListElement.querySelectorAll('button').forEach(button => {
-                    button.addEventListener('click', handleProgressionSelection);
+                const response = await fetch(GAS_URL, {
+                    method: 'POST', // POSTリクエストをGASに送信
+                    headers: {
+                        // ★★★ プリフライト回避のため Content-Type を text/plain にする ★★★
+                        'Content-Type': 'text/plain' 
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-            } catch (e) {
-                loadingElement.textContent = 'データの読み込みに失敗しました。GASのURLとデプロイ設定を確認してください。';
-                console.error("データロードエラー:", e);
-            }
-        }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-        // 進行選択時の処理（LocalStorageに保存してメイン画面に戻る）
-        function handleProgressionSelection(event) {
-            const progressionName = event.target.dataset.progressionName;
-            
-            // LocalStorageに進行名を一時保存
-            localStorage.setItem('tempProgressionSelection', progressionName);
-            
-            // メイン画面に戻る
-            alert(`コード進行「${progressionName}」を一時保存しました。メイン画面に戻ります。`);
-            window.location.href = 'index.html';
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(`✅ ${result.success}`, 'success');
+                    form.reset(); // 成功したらフォームをクリア
+                } else if (result.error) {
+                    showMessage(`❌ 追加失敗: ${result.error}`, 'error');
+                } else {
+                    showMessage('不明なエラーが発生しました。', 'error');
+                }
+
+            } catch (error) {
+                console.error('GAS POST処理中にエラー:', error);
+                showMessage(`通信エラーが発生しました: ${error.message}`, 'error');
+            }
+        });
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
         }
     </script>
 </body>
