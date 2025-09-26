@@ -19,8 +19,8 @@ let isAutoUpdating = false;
 // =========================================================================
 
 // フレットボードの描画パラメータ
-const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; // 1Fが22%に修正
-const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; // E6を71.5%に修正
+const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; 
+const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; 
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
@@ -114,7 +114,9 @@ function drawFretboard(containerId, chordName) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
-        fretLabel.style.left = '4%'; 
+        
+        // ★★★ 修正箇所: 基準フレットラベルの位置を1フレット目の下に移動 ★★★
+        fretLabel.style.left = '8%'; // 1フレット目の左側に寄せる調整値
         fretLabel.style.bottom = '4%'; 
         container.appendChild(fretLabel);
     }
@@ -127,7 +129,7 @@ function drawFretboard(containerId, chordName) {
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         // 描画するフレット位置を計算 (lowFretからの相対位置)
-        // ★★★ 修正箇所: + 1 を削除して、正しい相対フレット位置を取得する ★★★
+        // 修正済み: + 1 を削除して、正しい相対フレット位置を取得
         const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
 
         if (displayFret === 0) {
@@ -147,7 +149,6 @@ function drawFretboard(containerId, chordName) {
             // 押弦 (1Fから6F)
             dot.className = 'dot';
             // FRET_POSITIONSのインデックスは 1F の時 0
-            // なので displayFret (1～6) を使うには - 1 が必要
             dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`;
             container.appendChild(dot);
         }
