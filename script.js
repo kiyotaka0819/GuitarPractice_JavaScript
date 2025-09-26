@@ -1,4 +1,4 @@
-// script.js の全文 (JSONP & バレーコード描画ロジック修正)
+// script.js の全文 (JSONP & 描画位置最終調整版)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -27,13 +27,11 @@ const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 
 // =========================================================================
-// フレットボードの描画パラメータ
+// フレットボードの描画パラメータ (最終調整済み！)
 // =========================================================================
-const FRET_POSITIONS = [22, 43, 65, 78, 88, 95]; 
-const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5]; 
-
-// 開放弦/ミュートのX軸位置 (前の検証で調整した値)
-const OPEN_MUTE_X_POSITION = '4%'; 
+const FRET_POSITIONS = [22, 43, 65, 86, 88, 95]; // ★ 4フレット目を 86 に修正 ★
+const Y_AXIS_STRING_POSITIONS = [69.5, 61.5, 54.5, 47, 39, 32.5]; // ★ 全て -2.0 修正済み ★
+const OPEN_MUTE_X_POSITION = '4%'; // ★ 4% に修正済み ★
 
 
 // =========================================================================
@@ -150,8 +148,8 @@ function drawFretboard(containerId, chordName) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
-        fretLabel.style.left = '10%'; 
-        fretLabel.style.bottom = '4%'; 
+        fretLabel.style.left = '18%'; 
+        fretLabel.style.bottom = '12%'; 
         container.appendChild(fretLabel);
     }
     
@@ -162,14 +160,12 @@ function drawFretboard(containerId, chordName) {
         let displayFret = fret; // 実フレット値で初期化
 
         if (fret > 0) {
-            // ★★★ 修正箇所：lowFret > 1 のときのみ相対計算を行う！ ★★★
+            // lowFretが2以上（バレーコードなど）の場合にのみ相対計算を行う
             if (lowFret > 1) {
-                // lowFretが2以上（バレーコードなど）の場合
                 // 相対位置と描画上の+1オフセットを適用
                 displayFret = fret - lowFret + 1; 
             } else {
-                // lowFretが1（通常の開放弦コード）の場合
-                // 実フレット値（fret）をそのまま使う
+                // lowFretが1（通常の開放弦コード）の場合、実フレット値（fret）をそのまま使う
                 displayFret = fret;
             }
         } 
