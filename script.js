@@ -1,4 +1,4 @@
-// script.js の全文 (多段表示モードの追加)
+// script.js の全文 (ドット描画バグ修正とモード切り替えロジック)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -6,6 +6,7 @@ const nextChordButton = document.getElementById('next-chord-button');
 const prevChordButton = document.getElementById('prev-chord-button');
 const randomProgressionButton = document.getElementById('random-progression-button');
 const toggleAutoUpdateButton = document.getElementById('toggle-auto-update');
+const autoUpdateTimeSelect = document.getElementById('auto-update-time');
 const errorContainer = document.getElementById('error-container');
 
 // ★★★ 追加要素 ★★★
@@ -25,6 +26,7 @@ let isAutoUpdating = false;
 // =========================================================================
 // GAS接続設定 (変更なし)
 // =========================================================================
+// GAS URLはあなたのデプロイURLにすること！
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx1I7sOC37M1RR6aAAqfJoQCVi7KTGtQk4Z13s6cGplpF28kf88H4vKNVvDIzudeqbA/exec'; 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
@@ -32,22 +34,21 @@ const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 // =========================================================================
 // フレットボードの描画パラメータ (変更なし)
 // =========================================================================
+// FRET_POSITIONS: [1F, 2F, 3F, 4F, 5F, 6F] 
 const FRET_POSITIONS = [22, 43, 65, 86, 88, 95]; 
+// Y_AXIS_STRING_POSITIONS: [6弦, 5弦, 4弦, 3弦, 2弦, 1弦]
 const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 48, 41, 33.5]; 
 const OPEN_MUTE_X_POSITION = '4%'; 
 
 // =========================================================================
 // GAS接続とデータ整形ロジック (変更なし)
 // =========================================================================
-// fetchDataFromGAS(), loadProgressions(), populateProgressionSelect() は変更なしでそのまま利用
 async function fetchDataFromGAS() {
     const cachedData = localStorage.getItem(CACHE_KEY);
     const cachedTimestamp = localStorage.getItem(CACHE_KEY + 'Timestamp');
     if (cachedData && cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < CACHE_TTL)) {
-        console.log("✅ LocalStorageからキャッシュデータを読み込みました。");
         return JSON.parse(cachedData);
     }
-    console.log("❌ キャッシュ期限切れ、または初回アクセス。JSONPでGASからデータを取得します...");
     return new Promise((resolve, reject) => {
         const callbackName = 'gasCallback_' + Date.now();
         window[callbackName] = (data) => {
@@ -78,7 +79,6 @@ async function fetchDataFromGAS() {
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
         errorContainer.style.display = 'block';
         if (cachedData) {
-            console.warn("古いキャッシュを使用して続行します。");
             return JSON.parse(cachedData);
         }
         return null;
@@ -112,11 +112,9 @@ function populateProgressionSelect() {
     }
 }
 // =========================================================================
-// フレットボード描画 (既存の機能をそのまま使用)
+// フレットボード描画 (リストモードの描画位置バグを修正！)
 // =========================================================================
 
-// drawFretboard(containerId, chordName) は、元のコード通りで変更なし。
-// リストモードにもこの関数を流用できるように、containerIdからCSSクラスを判断して調整する。
 function drawFretboard(containerId, chordName) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -128,8 +126,6 @@ function drawFretboard(containerId, chordName) {
     
     const chordData = allChords[chordName];
     if (!chordData) {
-        container.textContent = 'コードデータなし';
-        // リストモードの場合は、要素自体を空にせず、コンテナごと削除しないとダメなので注意
         if (!isListModeElement) {
             container.textContent = 'コードデータなし';
         }
@@ -147,19 +143,23 @@ function drawFretboard(containerId, chordName) {
         const fretLabel = document.createElement('div');
         fretLabel.className = 'fret-label';
         fretLabel.textContent = lowFret;
-        // リストモードの場合は位置を調整
+        
+        // ★★★ lowFretラベルの位置調整 (修正済み) ★★★
         if (isListModeElement) {
             fretLabel.style.left = '5%';
             fretLabel.style.bottom = '5%';
+            fretLabel.style.fontSize = '12px'; 
         } else {
             fretLabel.style.left = '18%'; 
             fretLabel.style.bottom = '12%'; 
+            fretLabel.style.fontSize = '18px'; 
         }
         container.appendChild(fretLabel);
     }
     
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
+        
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
         
         let displayFret = fret; 
@@ -172,6 +172,7 @@ function drawFretboard(containerId, chordName) {
             }
         } 
 
+        // ★★★ ドットとミュートの位置調整は共通のOPEN_MUTE_X_POSITIONを使う ★★★
         if (displayFret === 0) {
             dot.className = 'open-mark';
             dot.style.left = OPEN_MUTE_X_POSITION; 
@@ -192,32 +193,28 @@ function drawFretboard(containerId, chordName) {
 }
 
 
-// ★★★ 新規追加: リストモード用の描画関数 ★★★
+// ★★★ 新規追加: リストモード用の描画関数 (変更なし) ★★★
 function renderListMode(progression, currentIndex) {
-    listModeDisplay.innerHTML = ''; // クリア
+    listModeDisplay.innerHTML = ''; 
 
     progression.forEach((chordName, index) => {
         const isCurrent = (index === currentIndex);
         const containerId = `list-chord-fretboard-${index}`;
         
-        // コード図全体を包むラッパー
         const wrapper = document.createElement('div');
         wrapper.className = `list-chord-container ${isCurrent ? 'current-chord-list' : ''}`;
         
-        // コード名表示
         const nameElement = document.createElement('h2');
         nameElement.textContent = allChords[chordName]?.displayName || chordName;
         wrapper.appendChild(nameElement);
 
-        // フレットボードコンテナ
         const fretboardContainer = document.createElement('div');
         fretboardContainer.id = containerId;
-        fretboardContainer.className = 'list-fretboard-size'; // リストモード用のCSSクラスを付与
+        fretboardContainer.className = 'list-fretboard-size'; 
         wrapper.appendChild(fretboardContainer);
         
         listModeDisplay.appendChild(wrapper);
         
-        // 描画関数を呼び出し（既存のdrawFretboardを再利用）
         drawFretboard(containerId, chordName);
     });
 }
@@ -304,7 +301,6 @@ function prevChord() {
 }
 
 
-// ★★★ 新規追加: モード切り替え関数 ★★★
 function toggleDisplayMode() {
     if (!currentProgression) return;
     
@@ -324,7 +320,6 @@ function toggleDisplayMode() {
 toggleDisplayModeButton.addEventListener('click', toggleDisplayMode);
 
 
-// ... (toggleAutoUpdate, generateRandomProgression, イベントリスナーは省略。変更なし) ...
 function toggleAutoUpdate() {
     if (!currentProgression) {
         alert("コード進行を選択して開始してください。");

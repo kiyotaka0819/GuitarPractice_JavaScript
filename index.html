@@ -130,15 +130,17 @@ form {
     margin-bottom: 5px;
     min-height: auto;
 }
-/* リストモード時のドット/マークサイズ調整 (既存のクラスを継承/調整) */
+/* リストモード時のドット/マークサイズ調整 (★ここを修正★) */
 .list-chord-container .dot, 
 .list-chord-container .open-mark, 
 .list-chord-container .mute-mark {
-    width: 10%; /* ドットサイズを相対的に大きく */
-    height: 10%;
+    width: 8%; /* 6%から8%に微増 */
+    height: 8%; /* 6%から8%に微増 */
 }
 .list-chord-container .mute-mark {
     font-size: 1.5em; 
+    color: black;
+    text-shadow: none; /* リストモードのXにはシャドウ不要 */
 }
 .list-chord-container .fret-label {
     font-size: 12px;
@@ -174,9 +176,10 @@ form {
     height: 100%;
 }
 
+/* ドット、開放弦、ミュートマークの共通設定 */
 .dot, .open-mark, .mute-mark {
     position: absolute;
-    width: 6%;
+    width: 6%; /* 詳細モードのドットサイズ */
     height: 6%;
     border-radius: 50%; 
     transform: translate(-50%, -50%);
@@ -199,20 +202,15 @@ form {
 .mute-mark {
     background: none; 
     border: none; 
-    color: black; /* Xは黒に変更 */
+    color: black; 
     font-weight: bold;
     font-size: 2em; 
     line-height: 0.5; 
-    text-shadow: none; /* text-shadowは消した方がきれいや */
 }
-/* Xの色のための追記。ミュートマークは文字だけで表示されてるから、CSSで色指定が必要やで */
+/* 詳細モードのXの色の調整（画像から判断して再設定） */
 .fretboard-wrapper .mute-mark {
-    color: rgb(234, 255, 0); /* 元々黄色やったみたいやから戻す */
+    color: #FFD700; /* 黄色っぽい色に */
     text-shadow: 1px 1px 0 #000000, -1px 1px 0 #000000, 1px -1px 0 #000000, -1px -1px 0 #000000;
-}
-.list-chord-container .mute-mark {
-    color: black;
-    text-shadow: none;
 }
 
 
