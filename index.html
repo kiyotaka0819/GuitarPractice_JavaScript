@@ -138,29 +138,30 @@ form {
     width: 6%;
     height: 6%;
     border-radius: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%); /* ★★★ センタリングのキモ！★★★ */
     z-index: 2;
     text-align: center;
     font-size: 10px; 
     line-height: 1.5; 
 }
 
-.mute-mark {
-    /* (既存のスタイルはそのまま) */
-    position: absolute;
-    /* top, left は JavaScript で設定される */
-    
-    /* ★★★ ここから修正/追加 ★★★ */
-    color: red;             /* 色を赤に変更 */
-    font-weight: bold;      /* 文字を太字に */
-    font-size: 1.5em;       /* 少し大きく */
-    line-height: 1;         /* 行の高さを調整して、×が中央に来るように */
-    text-shadow: 0 0 2px black; /* 黒い影をつけて、明るい背景でも見やすく */
-    /* ★★★ ここまで修正/追加 ★★★ */
-}
+/* ★★★ open-mark のスタイルを黄色＋黒枠に変更 (開発者ツール調整反映) ★★★ */
 .open-mark {
-    /* (既存のスタイルはそのまま) */
-    background-color: lightgreen; /* 例えば、開放弦は薄い緑色など */
+    background-color: #f8f202; /* 鮮やかな黄色 */
+    border-width: thick;
+    border-color: black;
+    border: solid;
+}
+
+/* ★★★ mute-mark のスタイルを視認性重視で調整 (赤の「×」) ★★★ */
+.mute-mark {
+    background: none; /* ドットではないので背景なし */
+    color: red; /* 見やすいように赤色 */
+    font-weight: bold;      
+    font-size: 1.5em;       
+    line-height: 1;         
+    text-shadow: 0 0 2px black; 
+    /* width/heightは共通スタイルで定義済み */
 }
 
 .fret-label {
