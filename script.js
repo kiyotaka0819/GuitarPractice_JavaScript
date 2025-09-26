@@ -1,4 +1,4 @@
-// script.js の全文 (データ取得ロジックをJSONPに変更)
+// script.js の全文 (データ取得ロジックをJSONPに変更、描画ズレ修正)
 
 const progressionSelect = document.getElementById('progression-select');
 const startProgressionButton = document.getElementById('start-progression-button');
@@ -17,10 +17,10 @@ let autoUpdateInterval = null;
 let isAutoUpdating = false;
 
 // =========================================================================
-// GAS接続設定 (ここが重要！)
+// GAS接続設定 (変更なし)
 // =========================================================================
 
-// ★★★ 標準GAS URL (JSONPはCORSの影響を受けないので、このURLでOK) ★★★
+// 標準GAS URL (JSONPはCORSの影響を受けないので、このURLでOK)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec'; 
 
 const CACHE_KEY = 'chordAppCache';
@@ -32,7 +32,7 @@ const Y_AXIS_STRING_POSITIONS = [71.5, 63.5, 56.5, 49, 41, 34.5];
 const OPEN_MUTE_X_POSITION = '3%';
 
 // =========================================================================
-// GAS接続とデータ整形ロジック (JSONPでデータ取得する！)
+// GAS接続とデータ整形ロジック (JSONPでデータ取得)
 // =========================================================================
 
 async function fetchDataFromGAS() {
@@ -46,29 +46,22 @@ async function fetchDataFromGAS() {
     
     console.log("❌ キャッシュ期限切れ、または初回アクセス。JSONPでGASからデータを取得します...");
     
-    // JSONPは fetch API を使わず、Promiseと動的scriptタグでラップする
     return new Promise((resolve, reject) => {
-        // 1. コールバック関数をグローバルに定義 (GAS側でこの関数を呼び出す)
         const callbackName = 'gasCallback_' + Date.now();
         window[callbackName] = (data) => {
-            // 成功時の処理
-            delete window[callbackName]; // グローバル関数を削除
-            script.remove();             // scriptタグを削除
+            delete window[callbackName]; 
+            script.remove();             
             
             if (data.error) {
                 reject(new Error(data.message || data.error));
                 return;
             }
-            // 成功したらキャッシュを更新して解決
             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
             localStorage.setItem(CACHE_KEY + 'Timestamp', Date.now().toString());
             resolve(data);
         };
 
-        // 2. <script>タグを作成し、GASにコールバック名とGETリクエストを送る
         const script = document.createElement('script');
-        
-        // GAS URLに「?callback=関数名」を付けてリクエストする
         script.src = `${GAS_URL}?callback=${callbackName}`; 
         
         script.onerror = () => {
@@ -77,11 +70,9 @@ async function fetchDataFromGAS() {
              reject(new Error("JSONPリクエストが失敗しました。GASのURLまたはデプロイを確認してください。"));
         };
         
-        // 3. ドキュメントに挿入して実行
         document.head.appendChild(script);
     })
     .catch(error => {
-        // エラー処理（フォールバック）
         console.error("GASからのデータ取得中にエラー:", error);
         errorContainer.textContent = `データ読み込みエラー: ${error.message}`;
         errorContainer.style.display = 'block';
@@ -94,7 +85,6 @@ async function fetchDataFromGAS() {
     });
 }
 
-// データの読み込みと初期表示 (変更なし)
 async function loadProgressions() {
     const data = await fetchDataFromGAS();
     
@@ -129,7 +119,7 @@ function populateProgressionSelect() {
 }
 
 // =========================================================================
-// フレットボード描画、ロジック、イベントリスナー (全て変更なし)
+// フレットボード描画 (描画ズレ修正済み！)
 // =========================================================================
 
 function drawFretboard(containerId, chordName) {
@@ -147,6 +137,7 @@ function drawFretboard(containerId, chordName) {
     const lowFret = chordData.lowFret;
     const fretPositions = chordData.fretPositions; 
 
+    // 画像の切り替え (lowFret 2以上でハイフレット用の画像に)
     const imageName = (lowFret >= 2) ? 'fretboard2.jpg' : 'fretboard.jpg';
     container.style.backgroundImage = `url(${imageName})`;
 
@@ -162,8 +153,14 @@ function drawFretboard(containerId, chordName) {
     fretPositions.forEach((fret, stringIndex) => {
         const dot = document.createElement('div');
         dot.style.top = `${Y_AXIS_STRING_POSITIONS[stringIndex]}%`;
-        const displayFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
-
+        
+        // 1. lowFretから見て相対的な位置を計算
+        const relativeFret = (fret === -1 || fret === 0) ? fret : (fret - lowFret); 
+        
+        // 2. lowFret >= 2 の時だけ、描画位置を1フレット分ずらすオフセットを適用 (ズレ修正！)
+        const offset = (lowFret >= 2) ? 1 : 0; 
+        const displayFret = (relativeFret >= 1) ? relativeFret + offset : relativeFret;
+        
         if (displayFret === 0) {
             dot.className = 'open-mark';
             dot.style.left = OPEN_MUTE_X_POSITION; 
@@ -177,11 +174,15 @@ function drawFretboard(containerId, chordName) {
 
         } else if (displayFret >= 1 && displayFret <= 6) { 
             dot.className = 'dot';
-            dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`;
+            dot.style.left = `${FRET_POSITIONS[displayFret - 1]}%`; 
             container.appendChild(dot);
         }
     });
 }
+
+// =========================================================================
+// ロジック/イベントハンドラ (変更なし)
+// =========================================================================
 
 function startProgression(progressionName) {
     if (!allProgressions[progressionName]) return; 
@@ -271,6 +272,11 @@ function generateRandomProgression() {
 
     startProgression(randomProgName);
 }
+
+
+// =========================================================================
+// イベントリスナー設定 (変更なし)
+// =========================================================================
 
 document.addEventListener('DOMContentLoaded', loadProgressions);
 
