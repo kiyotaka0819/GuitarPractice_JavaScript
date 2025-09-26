@@ -21,7 +21,7 @@ let isAutoUpdating = false;
 // =========================================================================
 
 // 標準GAS URL (JSONPはCORSの影響を受けないので、このURLでOK)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjGexgyNuyPOp2fNMCMztMa9kiuoO8TmQRT2TeJbnzWb3mpXN0NuO4KAGHrPLKprukaQ/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvU2tqK8MHU3ferlvXzfS8lX4tFyrVQukg_RbC-51c8JCu7rlTQRgJQLRbAQGrBUQPBg/exec'; 
 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)

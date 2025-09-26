@@ -2,96 +2,151 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>コード進行の追加</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>コード追加</title>
+    <link rel="icon" href="data:," />
     <style>
-        /* ... (CSSは省略) ... */
+/* --- 共通スタイル（index.htmlから流用） --- */
+* {
+    box-sizing: border-box;
+}
+body {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    text-align: center;
+    min-height: 100vh;
+}
+#container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: left;
+}
+h1 {
+    color: #0056b3;
+    margin-top: 0; 
+    text-align: center;
+}
+button {
+    padding: 8px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    margin: 3px;
+    width: 100%;
+}
+button:hover {
+    background-color: #0056b3;
+}
+/* --- 追加フォーム固有スタイル --- */
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+.fret-input-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+.fret-input-group > div {
+    flex-grow: 1;
+    text-align: center;
+}
+.fret-input-group input, .fret-input-group select, #chordName, #lowFret, #progressionName, #progressionChords {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#statusMessage {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    display: none;
+}
+.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>🎸 新しいコード進行の追加</h1>
+        <h1>コード / 進行の追加</h1>
 
-        <form id="addProgressionForm">
-            <label for="progressionName">進行名:</label>
-            <input type="text" id="progressionName" name="progressionName" required>
-            <div class="note">例: 王道進行、カノン進行 (シートの1列目)</div>
+        <form id="addChordForm">
+            <h2>単一コードの追加</h2>
+            <div class="form-group">
+                <label for="chordName">コード名 (例: C, Am7, G/B):</label>
+                <input type="text" id="chordName" name="chordName" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="lowFret">開始フレット (1で開放、2以上でバレーコードなど):</label>
+                <input type="number" id="lowFret" name="lowFret" value="1" min="1" required>
+            </div>
 
-            <label for="chordsInput">コード進行 (半角カンマ区切り):</label>
-            <textarea id="chordsInput" name="chordsInput" rows="4" required></textarea>
-            <div class="note">例: C, G, Am, Em, F, C, F, G (シートの2列目以降)</div>
-
-            <button type="submit">進行をスプレッドシートに追加</button>
+            <div class="form-group">
+                <label>各弦のフレット位置 (6弦から1弦の順):<br>
+                    0: 開放弦, -1: ミュート(×)</label>
+                <div class="fret-input-group" id="fretPositions">
+                    <div><label>6弦</label><input type="text" name="fret6" value="-1" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>5弦</label><input type="text" name="fret5" value="3" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>4弦</label><input type="text" name="fret4" value="2" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>3弦</label><input type="text" name="fret3" value="0" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>2弦</label><input type="text" name="fret2" value="1" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                    <div><label>1弦</label><input type="text" name="fret1" value="0" pattern="^(-1|0|[1-9][0-9]*)$" required></div>
+                </div>
+            </div>
+            
+            <button type="submit" style="background-color: #4CAF50;">コードをGASに登録</button>
         </form>
 
-        <div id="message"></div>
-        <button id="back-button" onclick="window.location.href='index.html';">メイン画面に戻る</button>
+        <hr style="margin: 30px 0;">
+
+        <form id="addProgressionForm">
+            <h2>コード進行の追加 (例: C-G-Am-F)</h2>
+            <div class="form-group">
+                <label for="progressionName">進行名 (例: カノン進行, Cメジャー基本):</label>
+                <input type="text" id="progressionName" name="progressionName" required>
+            </div>
+            <div class="form-group">
+                <label for="progressionChords">コード列 (コンマ区切りで入力):</label>
+                <input type="text" id="progressionChords" name="progressionChords" placeholder="C, G, Am, F" required>
+            </div>
+            
+            <button type="submit" style="background-color: #FFA500;">進行をGASに登録</button>
+        </form>
+
+        <div id="statusMessage"></div>
+
+        <button onclick="window.location.href='index.html';" style="background-color: #5cb85c; margin-top: 20px;">
+            メイン画面に戻る
+        </button>
     </div>
-
-    <script>
-        // ★★★ GAS_URLを忘れず googleusercontent.com に手動で変えること！ ★★★
-        const GAS_URL = 'https://script.googleusercontent.com/macros/s/AKfycbyQclnehxOohJBrKAcG9QweILLNK0ChEsEyGkV1ohIant2oSyFbYbCk55Qrspf5buHOJw/exec';
-        const form = document.getElementById('addProgressionForm');
-        const messageDiv = document.getElementById('message');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            messageDiv.style.display = 'none';
-            messageDiv.className = '';
-            
-            const progressionName = document.getElementById('progressionName').value.trim();
-            const chordsInput = document.getElementById('chordsInput').value
-                                     .split(',')
-                                     .map(c => c.trim())
-                                     .filter(c => c.length > 0);
-
-            if (chordsInput.length === 0) {
-                showMessage('コードを1つ以上入力してください。', 'error');
-                return;
-            }
-
-            const payload = {
-                progressionName: progressionName,
-                chords: chordsInput
-            };
-
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST', // POSTリクエストをGASに送信
-                    headers: {
-                        // ★★★ プリフライト回避のため Content-Type を text/plain にする ★★★
-                        'Content-Type': 'text/plain' 
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(`✅ ${result.success}`, 'success');
-                    form.reset(); // 成功したらフォームをクリア
-                } else if (result.error) {
-                    showMessage(`❌ 追加失敗: ${result.error}`, 'error');
-                } else {
-                    showMessage('不明なエラーが発生しました。', 'error');
-                }
-
-            } catch (error) {
-                console.error('GAS POST処理中にエラー:', error);
-                showMessage(`通信エラーが発生しました: ${error.message}`, 'error');
-            }
-        });
-
-        function showMessage(text, type) {
-            messageDiv.textContent = text;
-            messageDiv.className = type;
-            messageDiv.style.display = 'block';
-        }
-    </script>
+    <script src="add.js"></script> 
 </body>
 </html>
