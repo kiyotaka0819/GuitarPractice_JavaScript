@@ -20,7 +20,7 @@ let isAutoUpdating = false;
 
 // GAS接続設定
 // ★★★ ここにデプロイしたGASの「テスト実行」URLを入れるんやで！ ★★★
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxB2_Hh980Ks27wSyOYq6uz3xgnqheZrkJwTPYgk7_8LeszHeus9uMi_08-53G1wb6VPQ/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwIpI_-rQs44T-h4mhlRBlXJOfP0fVpeqFwVu1IkdW4QXo1cu8wxrzpVaecSD2DIaeSfw/exec'; 
 const CACHE_KEY = 'chordAppCache';
 const CACHE_TTL = 3600000; // キャッシュ有効期間: 1時間 (ミリ秒)
 
