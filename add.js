@@ -1,7 +1,7 @@
-// add.js
+// add.js の最終確定版
 
-// index.htmlと同じGASのURLを使う (ただし今度はPOST用として使う)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvU2tqK8MHU3ferlvXzfS8lX4tFyrVQukg_RbC-51c8JCu7rlTQRgJQLRbAQGrBUQPBg/exec'; 
+// index.htmlと同じGASのURLを使う (GETリクエストで読み書き兼用)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx1I7sOC37M1RR6aAAqfJoQCVi7KTGtQk4Z13s6cGplpF28kf88H4vKNVvDIzudeqbA/exec'; 
 
 const addChordForm = document.getElementById('addChordForm');
 const addProgressionForm = document.getElementById('addProgressionForm');
@@ -18,59 +18,80 @@ function showStatus(message, isSuccess) {
     }, 3000);
 }
 
-// データ送信関数 (フォームのデータをGASにPOST送信する)
-async function sendDataToGAS(data, endpoint) {
-    try {
-        // GASでは特殊なフォームデータ形式でPOSTする必要がある
-        const formData = new FormData();
-        for (const key in data) {
-            formData.append(key, data[key]);
-        }
+// データ送信関数 (データをURLに乗せてGETリクエストとして送信する)
+// GAS側はdoGetでこれを受け取り、書き込み処理を行う
+async function sendDataToGAS(data, endpoint, typeOfAdd) {
+    // 1. データをURLクエリパラメータ形式に変換
+    // 重要なのは type=add と type_of_add=chord/progression
+    const allData = {
+        type: 'add', // GASで書き込み処理だと判断させるフラグ
+        type_of_add: typeOfAdd, // どちらのフォームからのデータかをGASに伝える
+        ...data
+    };
+    
+    const params = new URLSearchParams(allData).toString();
+    
+    // 2. コールバック名を設定
+    const callbackName = 'gasAddCallback_' + Date.now();
+    
+    // 3. GETリクエストのURLを作成 (JSONP)
+    const url = `${GAS_URL}?callback=${callbackName}&${params}`; 
 
-        // fetchでPOSTリクエストを送信
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
-            body: formData 
-        });
+    statusMessage.textContent = `${endpoint}をGASに送信中...`;
+    statusMessage.className = '';
+    statusMessage.style.display = 'block';
 
-        // GASはリダイレクト応答を返すことが多いので、OK以外でもレスポンスボディを確認
-        const result = await response.json();
+    return new Promise((resolve, reject) => {
+        // GASからの応答を処理するコールバック関数をグローバルに定義
+        window[callbackName] = (result) => {
+            delete window[callbackName];
+            script.remove();
 
-        if (result.status === 'success') {
-            showStatus(result.message || `${endpoint}の登録に成功しました！`, true);
-            return true;
-        } else {
-            throw new Error(result.message || 'GAS側で処理エラーが発生しました。');
-        }
+            if (result.status === 'success') {
+                showStatus(result.message || `${endpoint}の登録に成功しました！`, true);
+                resolve(true);
+            } else {
+                showStatus(`エラー: ${result.message}`, false);
+                reject(new Error(result.message));
+            }
+        };
 
-    } catch (error) {
-        console.error("データ送信エラー:", error);
-        showStatus(`エラー: ${error.message}`, false);
-        return false;
-    }
+        // スクリプトタグを動的に挿入してJSONPを実行
+        const script = document.createElement('script');
+        script.src = url; 
+        
+        script.onerror = () => {
+            delete window[callbackName];
+            script.remove();
+            showStatus(`エラー: ${endpoint}の通信に失敗しました。`, false);
+            reject(new Error("通信エラー"));
+        };
+        
+        document.head.appendChild(script);
+    });
 }
 
 // 1. 単一コードの登録処理
 addChordForm.addEventListener('submit', async (e) => {
     e.preventDefault(); 
     
-    // フォームからデータを取得
     const chordName = document.getElementById('chordName').value.trim();
-    const lowFret = parseInt(document.getElementById('lowFret').value);
+    const lowFret = document.getElementById('lowFret').value;
     
-    // 弦のデータを配列で取得
+    // 弦のデータを取得
     const fretInputs = document.querySelectorAll('#fretPositions input');
-    const fretPositions = Array.from(fretInputs).map(input => parseInt(input.value));
-    
-    // 送信用データを作成 (type: chordとしてGAS側で判別する)
     const data = {
-        type: 'chord', 
         chordName: chordName,
         lowFret: lowFret,
-        fretPositions: fretPositions.join(',') // GASに送るためにカンマ区切り文字列にする
+        fret6: fretInputs[0].value,
+        fret5: fretInputs[1].value,
+        fret4: fretInputs[2].value,
+        fret3: fretInputs[3].value,
+        fret2: fretInputs[4].value,
+        fret1: fretInputs[5].value
     };
     
-    await sendDataToGAS(data, 'コード');
+    await sendDataToGAS(data, 'コード', 'chord');
 });
 
 
@@ -81,12 +102,10 @@ addProgressionForm.addEventListener('submit', async (e) => {
     const progressionName = document.getElementById('progressionName').value.trim();
     const progressionChords = document.getElementById('progressionChords').value.trim();
 
-    // 送信用データを作成 (type: progressionとしてGAS側で判別する)
     const data = {
-        type: 'progression', 
         progressionName: progressionName,
-        progressionChords: progressionChords // GASに送るためにそのまま文字列で送る
+        progressionChords: progressionChords 
     };
     
-    await sendDataToGAS(data, 'コード進行');
+    await sendDataToGAS(data, 'コード進行', 'progression');
 });
